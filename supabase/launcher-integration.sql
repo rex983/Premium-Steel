@@ -6,11 +6,11 @@
 --   3. The PSB app is deployed (or update the URL below before applying)
 -- =============================================================================
 
--- Replace with the deployed URL (e.g., https://psb-pricing.vercel.app) before applying.
--- Until deployed, set to localhost for testing or skip the launcher_apps insert.
+-- Deployed URL is set below. Update if the Vercel alias changes or a custom
+-- domain is added.
 DO $$
 DECLARE
-  psb_url TEXT := 'https://psb-pricing.vercel.app';
+  psb_url TEXT := 'https://premium-steel-umber.vercel.app';
   psb_app_id UUID;
 BEGIN
   -- 1) Register PSB Pricing as a launcher app tile

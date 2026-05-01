@@ -1,0 +1,95 @@
+import type { AccessoriesMatrix } from "@/types/pricing";
+import type { BuildingConfig } from "./types";
+import { gridCell, num, type RawGrid } from "./_helpers";
+
+/**
+ * Accessory line items.
+ *
+ * From spreadsheet result-cells:
+ *   walk-in doors:  L12 = J12*K12, L13 = J13*K13       (qty × unit price)
+ *   windows:        D18 = B18*C18, D19 = B19*C19       (qty × unit price)
+ *   roll-up doors:  AC28 = Z28*AB28 etc.               (qty × unit price)
+ *                   The roll-up size lookup feeds Z28 and AB28 from PSB-Quote Sheet.
+ *   extras:         D32 = B32*C32, D33, D34            (qty × price)
+ *   labor fees:     T42, T43 — XLOOKUP-based; Phase-3 simple pass uses 0
+ *   foam closure:   AO6 = VLOOKUP(I43, AS5:AT6, 2, FALSE)
+ *   base trim:      J22 = VLOOKUP(I22, H16:I17, 2, FALSE)
+ *   gutter (Pricing-Base!AE28): IFERROR(AA27 * AA28, 0)
+ *   color screws (Pricing-Base!N33): IFERROR(VLOOKUP(G45, M31:O32, 3, FALSE), 0)
+ *   premium colors (Pricing-Base!V28): VLOOKUP(L49, U24:W26, 3, FALSE)
+ *   26ga upgrade (Pricing-Base!N28): VLOOKUP(L48, M25:O27, 3, FALSE)
+ */
+export function calcWalkInDoors(
+  config: BuildingConfig,
+  matrices: AccessoriesMatrix
+): number[] {
+  const prices: number[] = [];
+  for (const door of config.walkInDoors || []) {
+    const item = matrices.walkInDoors.find((d) => d.label === door.size);
+    prices.push(door.qty * (item?.price ?? 0));
+  }
+  while (prices.length < 2) prices.push(0);
+  return prices;
+}
+
+export function calcWindows(
+  config: BuildingConfig,
+  matrices: AccessoriesMatrix
+): number[] {
+  const prices: number[] = [];
+  for (const w of config.windows || []) {
+    const item = matrices.windows.find((d) => d.label === w.size);
+    prices.push(w.qty * (item?.price ?? 0));
+  }
+  while (prices.length < 2) prices.push(0);
+  return prices;
+}
+
+export function calcRollUpDoors(
+  config: BuildingConfig,
+  matrices: AccessoriesMatrix
+): number[] {
+  // Phase-3 first cut. Spreadsheet formula:
+  //   Z28 = base(size) + sidePosition(K33) + sealOption(M33-based VLOOKUP)
+  //   AC28 = Z28 × qty (H33)
+  //
+  // TODO Phase-3b: implement side/end position adder (W6:X6 lookup) and seal-option
+  // adder (R1:T25 lookup with column 2 for Brush Seal, column 3 for Header Seal).
+  // Without these, we miss ~$440/door when "Header Seal only Option" is selected.
+  const prices: number[] = [];
+  for (const door of config.rollUpDoors || []) {
+    const item = matrices.rollUpDoors.find((d) => d.label === door.size);
+    prices.push(door.qty * (item?.price ?? 0));
+  }
+  while (prices.length < 3) prices.push(0);
+  return prices;
+}
+
+export function calcExtras(config: BuildingConfig, matrices: AccessoriesMatrix): number[] {
+  // For Phase 3, use the parsed extras list and look up by label.
+  const prices: number[] = [];
+  for (const e of config.extras || []) {
+    const item = matrices.extras.find((d) => d.label === e.label);
+    prices.push(e.qty * (item?.price ?? 0));
+  }
+  while (prices.length < 2) prices.push(0);
+  return prices;
+}
+
+export function calcInteriorWalls(config: BuildingConfig, matrices: AccessoriesMatrix): number {
+  if (!config.interiorWalls) return 0;
+  const item = matrices.interiorWalls.find((d) => d.label === config.interiorWalls!.label);
+  return config.interiorWalls.qty * (item?.price ?? 0);
+}
+
+/** Phase-3 placeholder: these accessory categories require deeper formula tracing. */
+export function calcBaseTrim(_config: BuildingConfig, _matrices: AccessoriesMatrix): number { return 0; }
+export function calcFoamClosure(_config: BuildingConfig, _matrices: AccessoriesMatrix): number { return 0; }
+export function calc26gaUpgrade(_config: BuildingConfig, _matrices: AccessoriesMatrix): number { return 0; }
+export function calcPremiumColors(_config: BuildingConfig, _matrices: AccessoriesMatrix): number { return 0; }
+export function calcColorScrews(_config: BuildingConfig, _matrices: AccessoriesMatrix): number { return 0; }
+export function calcGutter(_config: BuildingConfig, _matrices: AccessoriesMatrix): number { return 0; }
+export function calcExtraSheetMetal(_config: BuildingConfig, _matrices: AccessoriesMatrix): number { return 0; }
+export function calcFrameOuts(_config: BuildingConfig, _matrices: AccessoriesMatrix): number { return 0; }
+export function calcJTrim(_config: BuildingConfig, _matrices: AccessoriesMatrix): number { return 0; }
+export function calcLaborFees(_config: BuildingConfig, _matrices: AccessoriesMatrix): number[] { return [0, 0]; }

@@ -1,0 +1,45 @@
+PSB Parser test — 2026-05-01T18:33:05.080Z
+
+[south]
+  detection: region=south confidence=high
+  reasons: filename states = ["IN","OH","KY","IL","TN","WV","MO"] | PSB-Quote Sheet Z10 = "Indiana" | Snow - Changers D74 = "IN"
+  states: IN, OH, KY, IL, TN, WV, MO
+  validation: ok=true
+  stats:
+    region: south
+    parserVersion: 0.1.0
+    baseLengthCount: 17
+    baseWidthGaugeCount: 18
+    basePriceCount: 272
+    rollUpDoorCount: 24
+    walkInDoorCount: 8
+    windowCount: 9
+    anchorPackageCount: 6
+    windWarrantyCount: 3
+    insulationOptionCount: 6
+    promotionTierCount: 6
+    plansLengthCount: 17
+    snowLoadCount: 14
+    snowStateCount: 0
+
+[north]
+  detection: region=north confidence=high
+  reasons: filename states = ["MI","WI","PA","MN"] | PSB-Quote Sheet Z10 = "Michigan" | Snow - Changers D74 = "MI"
+  states: MI, WI, PA, MN
+  validation: ok=true
+  stats:
+    region: north
+    parserVersion: 0.1.0
+    baseLengthCount: 17
+    baseWidthGaugeCount: 18
+    basePriceCount: 272
+    rollUpDoorCount: 24
+    walkInDoorCount: 8
+    windowCount: 9
+    anchorPackageCount: 6
+    windWarrantyCount: 3
+    insulationOptionCount: 6
+    promotionTierCount: 6
+    plansLengthCount: 17
+    snowLoadCount: 14
+    snowStateCount: 0

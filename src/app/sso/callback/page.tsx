@@ -18,7 +18,7 @@ function Callback() {
     (async () => {
       const res = await signIn("sso-jwt", {
         token,
-        callbackUrl: "/customers",
+        callbackUrl: "/calculator",
         redirect: false,
       });
       if (res?.ok && res.url) {

@@ -2,6 +2,7 @@ import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { verifyLauncherSsoToken } from "@/lib/sso/verifier";
 import type { UserRole, Office } from "@/types/auth";
 
 const isDev = process.env.NODE_ENV === "development";
@@ -22,6 +23,32 @@ if (process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET) {
     })
   );
 }
+
+providers.push(
+  Credentials({
+    id: "sso-jwt",
+    name: "Launcher SSO",
+    credentials: {
+      token: { label: "SSO Token", type: "text" },
+    },
+    async authorize(credentials) {
+      const token = typeof credentials?.token === "string" ? credentials.token : "";
+      if (!token) return null;
+      try {
+        const claims = await verifyLauncherSsoToken(token);
+        return {
+          id: claims.profile_id || claims.sub,
+          email: claims.email,
+          name: claims.name || null,
+          image: null,
+        };
+      } catch (err) {
+        console.error("[auth] launcher SSO token verification failed", err);
+        return null;
+      }
+    },
+  })
+);
 
 providers.push(
   Credentials({

@@ -186,7 +186,7 @@ export default function QuoteDetailPage({
               <Money label="Additional Labor" value={result.totals.additionalLabor} />
               <Separator className="my-2" />
               <Money label="Total" value={result.totals.total} bold />
-              <Money label="Deposit" value={result.totals.depositAmount} muted />
+              <Money label={`Deposit (${(quote.deposit_pct * 100).toFixed(0)}%)`} value={result.totals.depositAmount} muted />
               <Money label="Balance Due" value={result.totals.balanceDue} bold />
               <Separator className="my-2" />
               <p className="text-[10px] uppercase tracking-wide text-muted-foreground">

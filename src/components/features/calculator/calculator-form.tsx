@@ -57,7 +57,6 @@ const defaultConfig = (m: PSBPricingMatrices, state?: string, snowLoad?: string,
   snowLoad: snowLoad ?? m.meta.defaultSnowLoad ?? "30 Ground Load",
   state: state ?? m.meta.defaultStateLabel ?? "",
   promoTier: "No Promotional Sale",
-  depositPct: 0.10,
   taxPct: 0.07,
 });
 
@@ -283,7 +282,7 @@ export function CalculatorForm({ matrices, regionId, defaultState, defaultSnowLo
 
         <Card>
           <CardHeader>
-            <h3 className="text-base font-semibold">Tax & Deposit</h3>
+            <h3 className="text-base font-semibold">Tax</h3>
           </CardHeader>
           <CardContent className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
@@ -303,20 +302,14 @@ export function CalculatorForm({ matrices, regionId, defaultState, defaultSnowLo
                 Applied to Total Taxable Sale.
               </p>
             </div>
-            <div className="space-y-1">
-              <Label htmlFor="depositPct" className="text-xs">Deposit (%)</Label>
-              <Input
-                id="depositPct"
-                type="number"
-                step={0.1}
-                min={0}
-                max={100}
-                value={Number(((config.depositPct ?? 0) * 100).toFixed(4))}
-                onChange={(e) => {
-                  const pct = Number(e.target.value);
-                  update("depositPct", Number.isFinite(pct) ? pct / 100 : 0);
-                }}
-              />
+            <div className="space-y-1 col-span-1">
+              <Label className="text-xs">Deposit</Label>
+              <p className="text-sm pt-2">
+                {(result.totals.depositPct * 100).toFixed(0)}%
+              </p>
+              <p className="text-[10px] text-muted-foreground">
+                Auto-tiered: 20% under $30,000 · 22% at $30,000+
+              </p>
             </div>
           </CardContent>
         </Card>

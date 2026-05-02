@@ -16,12 +16,21 @@ import type { LineItem, EngineTotals } from "./types";
  *   AC50  = Plans for Buildings!C25                  (Plans cost — display only)
  *   AC52  = Plans for Buildings!T25                  (Calcs cost — display only)
  */
+export const DEPOSIT_TIER_THRESHOLD = 30_000;
+export const DEPOSIT_PCT_BELOW = 0.20;
+export const DEPOSIT_PCT_AT_OR_ABOVE = 0.22;
+
+function depositPctFor(totalTaxableSale: number): number {
+  return totalTaxableSale >= DEPOSIT_TIER_THRESHOLD
+    ? DEPOSIT_PCT_AT_OR_ABOVE
+    : DEPOSIT_PCT_BELOW;
+}
+
 export function computeTotals(
   lineItems: LineItem[],
   engineeringTotal: number,
   promoDiscount: number,
   taxPct: number,
-  depositPct: number,
   equipmentLabor: number,
   additionalLabor: number,
   plansCost: number,
@@ -33,6 +42,7 @@ export function computeTotals(
   const taxAmount = round2(totalTaxableSale * taxPct);
   const subtotal = round2(totalTaxableSale + taxAmount);
   const total = round2(subtotal + equipmentLabor + additionalLabor);
+  const depositPct = depositPctFor(totalTaxableSale);
   const depositAmount = round2(totalTaxableSale * depositPct);
   // AC44 = 25% additional deposit (special orders); not modeled yet
   const balanceDue = round2(total - depositAmount);
@@ -45,6 +55,7 @@ export function computeTotals(
     equipmentLabor: round2(equipmentLabor),
     additionalLabor: round2(additionalLabor),
     total,
+    depositPct,
     depositAmount,
     balanceDue,
     plansCost: round2(plansCost),

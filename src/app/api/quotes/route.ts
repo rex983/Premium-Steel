@@ -178,7 +178,7 @@ export async function POST(req: NextRequest) {
       subtotal: result.totals.subtotal,
       tax_rate: config.taxPct ?? 0.07,
       tax_amount: result.totals.taxAmount,
-      deposit_pct: config.depositPct ?? 0.10,
+      deposit_pct: result.totals.depositPct,
       deposit_amount: result.totals.depositAmount,
       total: result.totals.total,
       promo_tier: config.promoTier ?? null,

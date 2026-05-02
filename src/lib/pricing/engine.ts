@@ -117,7 +117,6 @@ export function priceBuilding(
     engineering.totalEngineering,
     promoDiscount,
     config.taxPct ?? 0.07,
-    config.depositPct ?? 0.10,
     equipmentLabor,
     additionalLabor,
     plansCost,

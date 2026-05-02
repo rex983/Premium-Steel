@@ -44,7 +44,7 @@ export function TotalsPanel({ result }: { result: EngineOutput }) {
         <Separator />
         <Row label="Total" value={t.total} bold />
         <div className="space-y-1 mt-2">
-          <Row label="Deposit" value={t.depositAmount} muted />
+          <Row label={t.depositPct ? `Deposit (${(t.depositPct * 100).toFixed(0)}%)` : "Deposit"} value={t.depositAmount} muted />
           <Row label="Balance Due" value={t.balanceDue} bold />
         </div>
         <Separator />

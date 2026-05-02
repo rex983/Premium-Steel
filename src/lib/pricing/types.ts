@@ -87,9 +87,8 @@ export interface BuildingConfig {
   // Customer / location (drives region)
   state: string;          // Z10 — drives state-defaults (snow load + wind defaults)
 
-  // Promo, deposit, tax (configurable)
+  // Promo + tax (configurable). Deposit % is auto-tiered from total — see totals.ts.
   promoTier?: string;     // W24 — "No Promotional Sale" if absent
-  depositPct?: number;    // AB42 — default 0.10
   taxPct?: number;        // AA28 — default 0.07
 }
 
@@ -109,6 +108,7 @@ export interface EngineTotals {
   equipmentLabor: number;    // AC36 — Pricing - Labor-EQ!N29
   additionalLabor: number;   // AC38 = R53 + R54
   total: number;             // AC40 = AC30 + AC36 + AC38 + AC34 + AC32 + AC39
+  depositPct: number;        // auto-tiered: <30k = 0.20, >=30k = 0.22
   depositAmount: number;     // AC42 = AC26 × depositPct
   balanceDue: number;        // AC46 = AC40 - (AC42 + AC44)
   // Display-only (NOT in balance)

@@ -14,6 +14,8 @@ import { Separator } from "@/components/ui/separator";
 import { TotalsPanel } from "./totals-panel";
 import { EngineeringBreakdownPanel } from "./engineering-breakdown";
 import { SaveQuoteDialog } from "./save-quote-dialog";
+import { Button } from "@/components/ui/button";
+import { Eye } from "lucide-react";
 import {
   GAUGE_OPTIONS, ROOF_STYLES, SIDE_OPTIONS, END_OPTIONS,
   PANEL_ORIENTATIONS, PITCH_OPTIONS, SNOW_LOAD_OPTIONS, DEFAULT_WIND_MPH,
@@ -65,6 +67,29 @@ export function CalculatorForm({ matrices, regionId, defaultState, defaultSnowLo
   );
 
   const result = useMemo(() => priceBuilding(config, matrices), [config, matrices]);
+  const [previewing, setPreviewing] = useState(false);
+
+  const handlePreview = async () => {
+    setPreviewing(true);
+    try {
+      const res = await fetch("/api/quotes/preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ result }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        alert(j.error ?? "Failed to generate preview");
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank");
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } finally {
+      setPreviewing(false);
+    }
+  };
 
   const update = <K extends keyof BuildingConfig>(key: K, value: BuildingConfig[K]) => {
     setConfig((prev) => ({ ...prev, [key]: value }));
@@ -260,11 +285,17 @@ export function CalculatorForm({ matrices, regionId, defaultState, defaultSnowLo
       <div className="space-y-4">
         <TotalsPanel result={result} />
         <EngineeringBreakdownPanel breakdown={result.engineeringBreakdown} />
-        <SaveQuoteDialog
-          regionId={regionId}
-          config={config}
-          defaultCustomerState={config.state}
-        />
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handlePreview} disabled={previewing}>
+            <Eye className="h-4 w-4 mr-1" />
+            {previewing ? "Generating…" : "Preview Quote"}
+          </Button>
+          <SaveQuoteDialog
+            regionId={regionId}
+            config={config}
+            defaultCustomerState={config.state}
+          />
+        </div>
       </div>
     </div>
   );

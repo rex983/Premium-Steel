@@ -1,7 +1,18 @@
+import fs from "fs";
+import path from "path";
 import {
-  Document, Page, View, Text, StyleSheet,
+  Document, Page, View, Text, Image, StyleSheet,
 } from "@react-pdf/renderer";
 import type { EngineOutput } from "@/lib/pricing/types";
+
+const logoDataUrl = (() => {
+  try {
+    const buf = fs.readFileSync(path.join(process.cwd(), "public", "logo.png"));
+    return `data:image/png;base64,${buf.toString("base64")}`;
+  } catch {
+    return null;
+  }
+})();
 
 interface QuotePdfProps {
   quoteNumber: string;
@@ -39,6 +50,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
   },
+  brandLogo: { width: 130, height: 56, objectFit: "contain", marginBottom: 4 },
   brandTag: { fontSize: 9, color: "#555" },
   meta: { textAlign: "right", fontSize: 9 },
   metaRow: { flexDirection: "row", justifyContent: "flex-end", gap: 8 },
@@ -104,7 +116,11 @@ export function QuotePdf({ quoteNumber, status, customer, result, validUntil, no
       <Page size="LETTER" style={styles.page}>
         <View style={styles.header}>
           <View>
-            <Text style={styles.brand}>Premium Steel Buildings</Text>
+            {logoDataUrl ? (
+              <Image src={logoDataUrl} style={styles.brandLogo} />
+            ) : (
+              <Text style={styles.brand}>Premium Steel Buildings</Text>
+            )}
             <Text style={styles.brandTag}>PO Box 24, Godley, TX 76044-9998</Text>
             <Text style={styles.brandTag}>844-387-7246 · orders@premiumsteelbuildings.com</Text>
           </View>

@@ -280,6 +280,46 @@ export function CalculatorForm({ matrices, regionId, defaultState, defaultSnowLo
             {numField("windMph", "Wind (MPH)")}
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader>
+            <h3 className="text-base font-semibold">Tax & Deposit</h3>
+          </CardHeader>
+          <CardContent className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label htmlFor="taxPct" className="text-xs">Sales Tax (%)</Label>
+              <Input
+                id="taxPct"
+                type="number"
+                step={0.001}
+                min={0}
+                value={Number(((config.taxPct ?? 0) * 100).toFixed(4))}
+                onChange={(e) => {
+                  const pct = Number(e.target.value);
+                  update("taxPct", Number.isFinite(pct) ? pct / 100 : 0);
+                }}
+              />
+              <p className="text-[10px] text-muted-foreground">
+                Applied to Total Taxable Sale.
+              </p>
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="depositPct" className="text-xs">Deposit (%)</Label>
+              <Input
+                id="depositPct"
+                type="number"
+                step={0.1}
+                min={0}
+                max={100}
+                value={Number(((config.depositPct ?? 0) * 100).toFixed(4))}
+                onChange={(e) => {
+                  const pct = Number(e.target.value);
+                  update("depositPct", Number.isFinite(pct) ? pct / 100 : 0);
+                }}
+              />
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="space-y-4">

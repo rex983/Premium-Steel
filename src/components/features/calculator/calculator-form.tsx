@@ -19,6 +19,8 @@ import {
   PANEL_ORIENTATIONS, PITCH_OPTIONS, SNOW_LOAD_OPTIONS, DEFAULT_WIND_MPH,
 } from "@/lib/pricing/constants";
 
+const NONE = "__none__";
+
 export interface CalculatorFormProps {
   matrices: PSBPricingMatrices;
   regionId: string;
@@ -202,12 +204,12 @@ export function CalculatorForm({ matrices, regionId, defaultState, defaultSnowLo
             <div className="space-y-1">
               <Label className="text-xs">Insulation</Label>
               <Select
-                value={config.insulation}
-                onValueChange={(v) => update("insulation", v)}
+                value={config.insulation || NONE}
+                onValueChange={(v) => update("insulation", v === NONE ? "" : v)}
               >
                 <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value={NONE}>None</SelectItem>
                   {Array.from(new Set(matrices.insulation.options.map((o) => o.label))).map((label) => (
                     <SelectItem key={label} value={label}>{label}</SelectItem>
                   ))}
@@ -217,12 +219,12 @@ export function CalculatorForm({ matrices, regionId, defaultState, defaultSnowLo
             <div className="space-y-1">
               <Label className="text-xs">Insulation Coverage</Label>
               <Select
-                value={config.insulationType}
-                onValueChange={(v) => update("insulationType", v)}
+                value={config.insulationType || NONE}
+                onValueChange={(v) => update("insulationType", v === NONE ? "" : v)}
               >
                 <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">—</SelectItem>
+                  <SelectItem value={NONE}>—</SelectItem>
                   <SelectItem value="Roof Only">Roof Only</SelectItem>
                   <SelectItem value="Fully Insulated-Vertical">Fully Insulated</SelectItem>
                 </SelectContent>

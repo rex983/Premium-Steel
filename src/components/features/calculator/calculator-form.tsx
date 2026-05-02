@@ -149,7 +149,11 @@ export function CalculatorForm({ matrices, regionId, defaultState, defaultSnowLo
               >
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {PITCH_OPTIONS.map((p) => <SelectItem key={p} value={String(p)}>{p}/12P</SelectItem>)}
+                  {PITCH_OPTIONS.map((p) => (
+                    <SelectItem key={p} value={String(p)}>
+                      {p === 0 ? "Standard" : `${p}/12P`}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

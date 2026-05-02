@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+
+export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const supabase = await createServerSupabaseClient();
+  const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("psb_state_defaults")
     .select("state_code, region_id, default_snow_load, default_wind_mph")

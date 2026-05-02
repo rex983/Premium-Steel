@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+
+export const dynamic = "force-dynamic";
 
 export async function GET(
   req: NextRequest,
@@ -9,7 +11,7 @@ export async function GET(
   if (!regionId.match(/^[0-9a-f-]{36}$/)) {
     return NextResponse.json({ error: "Invalid region id" }, { status: 400 });
   }
-  const supabase = await createServerSupabaseClient();
+  const supabase = createAdminClient();
   const { searchParams } = new URL(req.url);
   const versionId = searchParams.get("versionId");
 

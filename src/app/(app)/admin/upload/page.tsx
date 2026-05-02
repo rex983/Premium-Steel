@@ -24,7 +24,7 @@ interface UploadResponse {
 }
 
 export default function UploadPage() {
-  const { regions, loading } = useRegions();
+  const { regions, loading, error: regionsError } = useRegions();
   const [regionId, setRegionId] = useState<string>("");
   const [file, setFile] = useState<File | null>(null);
   const [status, setStatus] = useState<Status>("idle");
@@ -71,7 +71,7 @@ export default function UploadPage() {
                 <Label className="text-xs">Region</Label>
                 <Select value={regionId} onValueChange={setRegionId} disabled={loading}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Pick a region…" />
+                    <SelectValue placeholder={loading ? "Loading regions…" : "Pick a region…"} />
                   </SelectTrigger>
                   <SelectContent>
                     {regions.map((r) => (
@@ -81,6 +81,12 @@ export default function UploadPage() {
                     ))}
                   </SelectContent>
                 </Select>
+                {regionsError && (
+                  <p className="text-xs text-destructive">Failed to load regions: {regionsError}</p>
+                )}
+                {!loading && !regionsError && regions.length === 0 && (
+                  <p className="text-xs text-amber-600">No active regions found. Create or activate one under Admin → Regions.</p>
+                )}
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">PSB Workbook (.xlsx)</Label>

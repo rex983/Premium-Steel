@@ -92,6 +92,35 @@ export function CalculatorForm({ matrices, regionId, defaultState }: CalculatorF
     setConfig((prev) => ({ ...prev, [key]: value }));
   };
 
+  type RudEntry = BuildingConfig["rollUpDoors"][number];
+  type DoorEntry = BuildingConfig["walkInDoors"][number];
+  type WindowEntry = BuildingConfig["windows"][number];
+
+  const setRud = (idx: number, patch: Partial<RudEntry>) => {
+    setConfig((prev) => {
+      const arr: RudEntry[] = [...prev.rollUpDoors];
+      while (arr.length <= idx) arr.push({ size: "", qty: 0, position: "SIDE" });
+      arr[idx] = { ...arr[idx], ...patch };
+      return { ...prev, rollUpDoors: arr };
+    });
+  };
+  const setWid = (idx: number, patch: Partial<DoorEntry>) => {
+    setConfig((prev) => {
+      const arr: DoorEntry[] = [...prev.walkInDoors];
+      while (arr.length <= idx) arr.push({ size: "", qty: 0 });
+      arr[idx] = { ...arr[idx], ...patch };
+      return { ...prev, walkInDoors: arr };
+    });
+  };
+  const setWin = (idx: number, patch: Partial<WindowEntry>) => {
+    setConfig((prev) => {
+      const arr: WindowEntry[] = [...prev.windows];
+      while (arr.length <= idx) arr.push({ size: "", qty: 0 });
+      arr[idx] = { ...arr[idx], ...patch };
+      return { ...prev, windows: arr };
+    });
+  };
+
   const numField = (key: keyof BuildingConfig, label: string, step = 1) => (
     <div className="space-y-1">
       <Label htmlFor={String(key)} className="text-xs">{label}</Label>
@@ -191,6 +220,140 @@ export function CalculatorForm({ matrices, regionId, defaultState }: CalculatorF
                 </SelectContent>
               </Select>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <h3 className="text-base font-semibold">Roll Up Doors</h3>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {[0, 1, 2].map((idx) => {
+              const entry = config.rollUpDoors[idx];
+              const size = entry?.size ?? "";
+              return (
+                <div key={idx} className="grid grid-cols-12 gap-2 items-end">
+                  <div className="col-span-5 space-y-1">
+                    <Label className="text-xs">Size</Label>
+                    <Select
+                      value={size || NONE}
+                      onValueChange={(v) => setRud(idx, { size: v === NONE ? "" : v })}
+                    >
+                      <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={NONE}>—</SelectItem>
+                        {matrices.accessories.rollUpDoors.map((d) => (
+                          <SelectItem key={d.label} value={d.label}>{d.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="col-span-3 space-y-1">
+                    <Label className="text-xs">Qty</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={entry?.qty ?? 0}
+                      onChange={(e) => setRud(idx, { qty: Number(e.target.value) || 0 })}
+                      disabled={!size}
+                    />
+                  </div>
+                  <div className="col-span-4 space-y-1">
+                    <Label className="text-xs">Position</Label>
+                    <Select
+                      value={entry?.position ?? "SIDE"}
+                      onValueChange={(v) => setRud(idx, { position: v as "SIDE" | "END" })}
+                      disabled={!size}
+                    >
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="SIDE">Side</SelectItem>
+                        <SelectItem value="END">End</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <h3 className="text-base font-semibold">Walk-In Doors & Windows</h3>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="text-xs text-muted-foreground">Walk-In Doors</div>
+            {[0, 1].map((idx) => {
+              const entry = config.walkInDoors[idx];
+              const size = entry?.size ?? "";
+              return (
+                <div key={`wid-${idx}`} className="grid grid-cols-12 gap-2 items-end">
+                  <div className="col-span-8 space-y-1">
+                    <Label className="text-xs">Size</Label>
+                    <Select
+                      value={size || NONE}
+                      onValueChange={(v) => setWid(idx, { size: v === NONE ? "" : v })}
+                    >
+                      <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={NONE}>—</SelectItem>
+                        {matrices.accessories.walkInDoors.map((d) => (
+                          <SelectItem key={d.label} value={d.label}>{d.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="col-span-4 space-y-1">
+                    <Label className="text-xs">Qty</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={entry?.qty ?? 0}
+                      onChange={(e) => setWid(idx, { qty: Number(e.target.value) || 0 })}
+                      disabled={!size}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+
+            <Separator />
+
+            <div className="text-xs text-muted-foreground">Windows</div>
+            {[0, 1].map((idx) => {
+              const entry = config.windows[idx];
+              const size = entry?.size ?? "";
+              return (
+                <div key={`win-${idx}`} className="grid grid-cols-12 gap-2 items-end">
+                  <div className="col-span-8 space-y-1">
+                    <Label className="text-xs">Size</Label>
+                    <Select
+                      value={size || NONE}
+                      onValueChange={(v) => setWin(idx, { size: v === NONE ? "" : v })}
+                    >
+                      <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={NONE}>—</SelectItem>
+                        {matrices.accessories.windows.map((w) => (
+                          <SelectItem key={w.label} value={w.label}>{w.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="col-span-4 space-y-1">
+                    <Label className="text-xs">Qty</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={entry?.qty ?? 0}
+                      onChange={(e) => setWin(idx, { qty: Number(e.target.value) || 0 })}
+                      disabled={!size}
+                    />
+                  </div>
+                </div>
+              );
+            })}
           </CardContent>
         </Card>
 

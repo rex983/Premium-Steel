@@ -29,7 +29,7 @@ export function StatePicker({ states, value, onChange }: StatePickerProps) {
         <SelectContent>
           {states.map((s) => (
             <SelectItem key={s.state_code} value={s.state_code}>
-              {STATE_LABEL[s.state_code] ?? s.state_code} ({s.default_snow_load})
+              {STATE_LABEL[s.state_code] ?? s.state_code}
             </SelectItem>
           ))}
         </SelectContent>

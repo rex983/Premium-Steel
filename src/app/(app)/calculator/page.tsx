@@ -29,6 +29,20 @@ export default function CalculatorPage() {
     if (sd?.region_id && sd.region_id !== regionId) setRegionId(sd.region_id);
   }, [stateCode, stateDefaults, regionId]);
 
+  // Only show states belonging to the selected region.
+  const visibleStateDefaults = regionId
+    ? stateDefaults.filter((s) => s.region_id === regionId)
+    : stateDefaults;
+
+  // If the user switches region and the current state no longer belongs to it,
+  // drop the stale stateCode so the picker doesn't show a phantom selection.
+  useEffect(() => {
+    if (!stateCode) return;
+    if (!visibleStateDefaults.some((s) => s.state_code === stateCode)) {
+      setStateCode("");
+    }
+  }, [regionId, visibleStateDefaults, stateCode]);
+
   const stateDefault = stateDefaults.find((s) => s.state_code === stateCode);
 
   return (
@@ -43,7 +57,7 @@ export default function CalculatorPage() {
               onChange={setRegionId}
             />
             <StatePicker
-              states={stateDefaults}
+              states={visibleStateDefaults}
               value={stateCode}
               onChange={setStateCode}
             />

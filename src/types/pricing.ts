@@ -139,45 +139,125 @@ export interface ChangersMatrix {
 // =============================================================================
 // Snow engineering
 // =============================================================================
+/**
+ * Per-state engineering constants (one entry per long state name on the
+ * Snow - Changers truss-pricing block, rows 58–70). Multiple long names can
+ * share a `code` (e.g. several "MI"-tier states), and the constants vary
+ * across the long-name columns even within the same code — so we key by the
+ * long state name here and let the engine resolve the code when it needs it.
+ */
+export interface SnowStateConstants {
+  code: string;                                // row 59  (e.g. "IN", "MI", "TX")
+  trussPriceByWidth: Record<number, number>;   // rows 60–67  (12,18,20,22,24,26,28,30 wide truss)
+  legHeightMult: number;                       // row 68
+  channelPricePerFt: number;                   // row 69
+  tubingPricePerFt: number;                    // row 70
+}
+
 export interface SnowChangersMatrix {
-  // The state lookup column → state code mapping
-  states: string[]; // [N73, N74, N75, N76, N77]
-  // Snow-load options used as dropdown
-  snowLoads: string[]; // 30 GL, 40 GL, ..., 90 GL, 20 RL, 27 RL, ..., 61 RL
-  // wind options
-  windOptions: number[];
-  // constants
-  trussPrice: number;       // G76
-  legHeightPrice: number;   // J72
-  pricePerFoot: number;     // J75 (channel pricing)
-  tubingPricePerFt: number; // J76 (vertical tubing)
+  // Snow-load name ↔ short code (rows 9–10)
+  snowLoadNameToCode: Record<string, string>;  // "30 Ground Load" → "30GL"
+  snowLoadCodeOrder: string[];                 // axis order of B10:P10 — used for F94 column MATCH
+
+  // Leg height → symbol (rows 26–27) and tubing feet (row 28)
+  legHeightSymbol: Record<number, string>;     // 15 → "T"
+  legHeightTubingFeet: Record<number, number>; // 15 → 28
+
+  // Width buckets — Hat Channel (rows 17–18) and Truss (rows 49–50)
+  hcWidthBucket: Record<number, number>;       // 30 → 36
+  trussWidthBucket: Record<number, number>;    // 30 → 30
+
+  // Per-state engineering constants, keyed by long state name (row 58)
+  byStateName: Record<string, SnowStateConstants>;
+
+  // F94 leg-height-adjustment table (rows 81–89, cols B–P).
+  // Row axis = truss width buckets (12,18,20,22,24,26,28,30,0).
+  // Col axis = snow-load codes in `snowLoadCodeOrder`.
+  legHeightAdjust: Record<number, Record<string, number>>;
+
+  // UI dropdowns (back-compat)
+  states: string[];                            // [N73:N77] — distinct state codes
+  snowLoads: string[];                         // long-name list for UI
+  windOptions: number[];                       // distinct wind speeds (105/115/130/140/155/165/180)
 }
 
 /**
- * Snow - Trusses original-truss-count matrix.
- * Indexed by (length, snow-load, wind-mph-bucket) → original trusses.
- * The actual lookup is via Snow - Truss Spacing (column 'BH11' in source).
+ * Snow - Trusses — original truss count by (truss-width, state-code, length).
+ * Col 1 row keys = `${widthBucket}-${stateCode}` (e.g. "30-IN").
+ * Row axis = lengths 1..100 (col A).
  */
 export interface SnowTrussesMatrix {
-  // [snowLoad][wind][length] = originalTrussCount
-  counts: Record<string, Record<number, Record<number, number>>>;
-  // Original truss spacing matrix
-  spacing: Record<string, Record<number, Record<number, number>>>;
+  colKeys: string[];                           // row 1 col B..BE — `${width}-${stateCode}`
+  lengths: number[];                           // col A rows 2..101 — 1..100
+  counts: number[][];                          // rows × cols (B2:BE101)
 }
 
+/**
+ * Snow - Hat Channels.
+ * Lookup tables:
+ *   - rowKeys (col A 2..71): `${widthBucket}-${snowCode}` — e.g. "36-30GL"
+ *   - windHeader (B1:H1): wind values
+ *   - spacingTable (B2:H71): required spacing
+ *   - stateCodes (R2:R8): per-state row axis
+ *   - widthHeader (S1:Z1): per-width col axis
+ *   - originalCounts (S2:Z8): original hat-channel count per (state, width)
+ */
 export interface SnowHatChannelsMatrix {
-  // [width][snowLoad] = { spacing, channelPricePerFt }
-  matrix: Record<number, Record<string, { spacing: number; pricePerFt: number }>>;
+  rowKeys: string[];
+  windHeader: number[];
+  spacingTable: number[][];
+
+  stateCodes: string[];
+  widthHeader: number[];
+  originalCounts: number[][];
 }
 
+/**
+ * Snow - Verticals.
+ *   - legHeightHeader (B1:V1): leg heights 0..20
+ *   - windCol (A2:A8): wind values
+ *   - spacingTable (B2:V8): required vertical spacing
+ *   - widthHeader (B13:I13): widths 12..30
+ *   - originalRow (B14:I14): original vertical count per width
+ */
 export interface SnowVerticalsMatrix {
-  // [width][snowLoad][wind] = original verticals + spacing
-  matrix: Record<number, Record<string, Record<number, { spacing: number; original: number }>>>;
+  legHeightHeader: number[];
+  windCol: number[];
+  spacingTable: number[][];
+  widthHeader: number[];
+  originalRow: number[];
 }
 
+/**
+ * Snow - Girts.
+ *   - girtRowKeys (A2:A6): bucketed truss-spacing keys (60,54,48,42,36)
+ *   - windHeader (B1:H1): wind values
+ *   - spacingTable (B2:H6): required girt spacing
+ *   - legHeightCol (L2:L22): 0..20
+ *   - originalCol (M2:M22): original girt count per leg height
+ *   - trussSpacingAxis (B28:BJ28): 0..60 (raw truss-spacing values)
+ *   - trussSpacingBucket (B27:BJ27): bucket lookup for each axis value
+ */
 export interface SnowGirtsMatrix {
-  // [legHeight][windMph] = original girts + spacing
-  matrix: Record<number, Record<number, { spacing: number; original: number }>>;
+  girtRowKeys: number[];
+  windHeader: number[];
+  spacingTable: number[][];
+  legHeightCol: number[];
+  originalCol: number[];
+  trussSpacingAxis: number[];
+  trussSpacingBucket: number[];
+}
+
+/**
+ * Snow - Truss Spacing — the master spacing matrix.
+ *   - rowKeys (A2:A43): `${legSymbol}-${snowCode}` (e.g. "T-30GL")
+ *   - colKeys (B1:HQ1): `${E|O}-${wind}-${trussWidth}-{STD|AFV}` (e.g. "E-105-30-AFV")
+ *   - spacingTable (B2:HQ43)
+ */
+export interface SnowTrussSpacingMatrix {
+  rowKeys: string[];
+  colKeys: string[];
+  spacingTable: number[][];
 }
 
 export interface SnowDiagonalBracingMatrix {
@@ -188,6 +268,7 @@ export interface SnowDiagonalBracingMatrix {
 export interface SnowMatrices {
   changers: SnowChangersMatrix;
   trusses: SnowTrussesMatrix;
+  trussSpacing: SnowTrussSpacingMatrix;
   hatChannels: SnowHatChannelsMatrix;
   verticals: SnowVerticalsMatrix;
   girts: SnowGirtsMatrix;

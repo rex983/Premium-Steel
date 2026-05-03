@@ -1,19 +1,35 @@
 import type { WorkSheet } from "xlsx";
 import type { SnowTrussesMatrix } from "@/types/pricing";
-import { rawGrid, type RawGrid } from "./_raw-grid";
+import { getString, getNumber } from "./utils";
+import { colToLetter } from "./_raw-grid";
 
 /**
- * Snow - Trusses — 5327-formula matrix giving the original truss count.
- * Reference output: Snow Math Calc T2 = 'Snow - Trusses '!$BH$11 (a single cell).
+ * Snow - Trusses — original truss count by (truss-width × state-code, length).
  *
- * Sheet is 101×63. The cells are formulas referencing 'Snow - Truss Spacing' and
- * 'Snow - Changers'. We capture cached values as a raw grid; the engine selects
- * the right cell using the same input routing the spreadsheet does.
+ *   - Row 1 cols B..BE: keys `${trussWidth}-{stateCode}` (e.g. "30-IN")
+ *   - Col A rows 2..101: lengths 1..100
+ *   - B2:BE101: original truss count
  */
 export function readSnowTrusses(sheet: WorkSheet): SnowTrussesMatrix {
-  return {
-    counts: {},
-    spacing: {},
-    raw: rawGrid(sheet, 101, 63),
-  } as SnowTrussesMatrix & { raw: RawGrid };
+  const colKeys: string[] = [];
+  for (let c = 2; c <= 100; c++) {
+    const v = getString(sheet, colToLetter(c) + "1");
+    if (!v) break;
+    colKeys.push(v);
+  }
+
+  const lengths: number[] = [];
+  const counts: number[][] = [];
+  for (let r = 2; r <= 101; r++) {
+    const len = getNumber(sheet, `A${r}`);
+    if (len <= 0) break;
+    lengths.push(len);
+    const row: number[] = [];
+    for (let c = 2; c <= 1 + colKeys.length; c++) {
+      row.push(getNumber(sheet, colToLetter(c) + r));
+    }
+    counts.push(row);
+  }
+
+  return { colKeys, lengths, counts };
 }

@@ -24,7 +24,7 @@ import { readSnowGirts } from "./sheet-readers/snow-girts";
 import { readSnowDiagonalBracing } from "./sheet-readers/snow-diagonal-bracing";
 import { validateMatrices, type ValidationResult } from "./validators";
 
-export const PARSER_VERSION = "0.1.0";
+export const PARSER_VERSION = "0.2.0";
 
 export interface ParseResult {
   detection: RegionDetection;
@@ -92,7 +92,8 @@ export function parsePsbWorkbook(
     changers,
     snow: {
       changers: snowChangers,
-      trusses: { ...snowTrusses, spacingRaw: snowTrussSpacing } as typeof snowTrusses,
+      trusses: snowTrusses,
+      trussSpacing: snowTrussSpacing,
       hatChannels: snowHat,
       verticals: snowVerticals,
       girts: snowGirts,

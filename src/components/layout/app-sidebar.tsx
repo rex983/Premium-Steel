@@ -37,7 +37,7 @@ const navItems = [
 const adminItems = [
   { title: "Upload Pricing", href: "/admin/upload", icon: Upload },
   { title: "Regions", href: "/admin/regions", icon: Map },
-  { title: "State Defaults", href: "/admin/states", icon: Snowflake },
+  { title: "State → Region", href: "/admin/states", icon: Snowflake },
   { title: "Config", href: "/admin/config", icon: SlidersHorizontal },
   { title: "Audit Log", href: "/admin/audit-log", icon: History },
 ];

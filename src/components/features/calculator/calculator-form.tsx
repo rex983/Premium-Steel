@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { BuildingConfig } from "@/lib/pricing/types";
 import type { PSBPricingMatrices } from "@/types/pricing";
 import { priceBuilding } from "@/lib/pricing/engine";
@@ -59,6 +59,8 @@ export interface CalculatorFormProps {
   matrices: PSBPricingMatrices;
   regionId: string;
   defaultState?: string;
+  taxPct?: number;
+  onDepositPctChange?: (pct: number) => void;
 }
 
 const defaultConfig = (m: PSBPricingMatrices, state?: string): BuildingConfig => ({
@@ -90,12 +92,25 @@ const defaultConfig = (m: PSBPricingMatrices, state?: string): BuildingConfig =>
   taxPct: 0,
 });
 
-export function CalculatorForm({ matrices, regionId, defaultState }: CalculatorFormProps) {
+export function CalculatorForm({
+  matrices,
+  regionId,
+  defaultState,
+  taxPct,
+  onDepositPctChange,
+}: CalculatorFormProps) {
   const [config, setConfig] = useState<BuildingConfig>(() =>
     defaultConfig(matrices, defaultState)
   );
 
-  const result = useMemo(() => priceBuilding(config, matrices), [config, matrices]);
+  const result = useMemo(
+    () => priceBuilding({ ...config, taxPct: taxPct ?? config.taxPct ?? 0 }, matrices),
+    [config, taxPct, matrices]
+  );
+  useEffect(() => {
+    onDepositPctChange?.(result.totals.depositPct);
+  }, [result.totals.depositPct, onDepositPctChange]);
+
   const [previewing, setPreviewing] = useState(false);
 
   const handlePreview = async () => {
@@ -445,35 +460,6 @@ export function CalculatorForm({ matrices, regionId, defaultState }: CalculatorF
               </Select>
             </div>
           {numField("windMph", "Wind (MPH)")}
-        </Section>
-
-        <Section title="Tax" contentClassName="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <Label htmlFor="taxPct" className="text-xs">Sales Tax (%)</Label>
-              <Input
-                id="taxPct"
-                type="number"
-                step={0.001}
-                min={0}
-                value={Number(((config.taxPct ?? 0) * 100).toFixed(4))}
-                onChange={(e) => {
-                  const pct = Number(e.target.value);
-                  update("taxPct", Number.isFinite(pct) ? pct / 100 : 0);
-                }}
-              />
-              <p className="text-[10px] text-muted-foreground">
-                Applied to Total Taxable Sale.
-              </p>
-            </div>
-            <div className="space-y-1 col-span-1">
-              <Label className="text-xs">Deposit</Label>
-              <p className="text-sm pt-2">
-                {(result.totals.depositPct * 100).toFixed(0)}%
-              </p>
-              <p className="text-[10px] text-muted-foreground">
-                Auto-tiered: 20% under $30,000 · 22% at $30,000+
-              </p>
-            </div>
         </Section>
       </div>
 

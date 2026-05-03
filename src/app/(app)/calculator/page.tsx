@@ -9,12 +9,16 @@ import { CalculatorForm } from "@/components/features/calculator/calculator-form
 import { RegionPicker } from "@/components/features/calculator/region-picker";
 import { StatePicker } from "@/components/features/calculator/state-picker";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function CalculatorPage() {
   const { regions, loading: regionsLoading, error: regionsError } = useRegions();
   const { stateDefaults, loading: stateLoading } = useStateDefaults();
   const [regionId, setRegionId] = useState<string | null>(null);
   const [stateCode, setStateCode] = useState<string>("");
+  const [taxPct, setTaxPct] = useState<number>(0);
+  const [depositPct, setDepositPct] = useState<number>(0.2);
   const { pricing, loading: pricingLoading, error: pricingError } = usePricing(regionId);
 
   // Auto-pick first region once regions load
@@ -50,7 +54,7 @@ export default function CalculatorPage() {
       <AppHeader title="Calculator" />
       <main className="flex-1 p-6 space-y-4">
         <Card>
-          <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-6">
+          <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-6">
             <RegionPicker
               regions={regions}
               selectedRegionId={regionId}
@@ -61,8 +65,31 @@ export default function CalculatorPage() {
               value={stateCode}
               onChange={setStateCode}
             />
+            <div className="space-y-1 max-w-sm">
+              <Label htmlFor="taxPct" className="text-xs">Sales Tax (%)</Label>
+              <Input
+                id="taxPct"
+                type="number"
+                step={0.001}
+                min={0}
+                value={Number((taxPct * 100).toFixed(4))}
+                onChange={(e) => {
+                  const pct = Number(e.target.value);
+                  setTaxPct(Number.isFinite(pct) ? pct / 100 : 0);
+                }}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Deposit</Label>
+              <p className="text-sm pt-2 font-medium">
+                {(depositPct * 100).toFixed(0)}%
+              </p>
+              <p className="text-[10px] text-muted-foreground leading-tight">
+                Auto-tiered: 20% under $30,000 · 22% at $30,000+
+              </p>
+            </div>
             {pricing && (
-              <div className="text-xs text-muted-foreground self-end pb-2">
+              <div className="col-span-2 md:col-span-4 text-xs text-muted-foreground -mt-1">
                 Pricing version {pricing.version} loaded
               </div>
             )}
@@ -83,8 +110,8 @@ export default function CalculatorPage() {
             matrices={pricing.matrices}
             regionId={regionId}
             defaultState={stateDefault ? stateLabel(stateDefault.state_code) : undefined}
-            // Snow load + wind always default to 30 GL / 105 MPH; state-defaults
-            // only drive region selection now.
+            taxPct={taxPct}
+            onDepositPctChange={setDepositPct}
             key={`${regionId}|${stateCode}|${pricing.id}`}
           />
         )}

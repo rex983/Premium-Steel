@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Eye } from "lucide-react";
 import {
   GAUGE_OPTIONS, ROOF_STYLES, SIDE_OPTIONS, END_OPTIONS,
-  PANEL_ORIENTATIONS, PITCH_OPTIONS, SNOW_LOAD_OPTIONS, DEFAULT_WIND_MPH,
+  PANEL_ORIENTATIONS, PITCH_OPTIONS, SNOW_LOAD_OPTIONS,
 } from "@/lib/pricing/constants";
 
 const NONE = "__none__";
@@ -27,20 +27,18 @@ export interface CalculatorFormProps {
   matrices: PSBPricingMatrices;
   regionId: string;
   defaultState?: string;
-  defaultSnowLoad?: string;
-  defaultWindMph?: number;
 }
 
-const defaultConfig = (m: PSBPricingMatrices, state?: string, snowLoad?: string, wind?: number): BuildingConfig => ({
-  width: 30,
-  length: 50,
-  height: 15,
+const defaultConfig = (m: PSBPricingMatrices, state?: string): BuildingConfig => ({
+  width: 12,
+  length: 20,
+  height: 8,
   gauge: "14g",
   roofStyle: "A-Frame Vertical",
   sides: "Fully Enclosed",
   ends: "Enclosed Ends",
-  sidesPanel: "Vertical",
-  endsPanel: "Vertical",
+  sidesPanel: "Horizontal",
+  endsPanel: "Horizontal",
   sidesQty: 2,
   endsQty: 2,
   rollUpDoors: [],
@@ -53,16 +51,16 @@ const defaultConfig = (m: PSBPricingMatrices, state?: string, snowLoad?: string,
   pitch: 0,
   pitchUnit: "12P",
   overhang: "",
-  windMph: wind ?? m.meta.defaultWindMph ?? DEFAULT_WIND_MPH,
-  snowLoad: snowLoad ?? m.meta.defaultSnowLoad ?? "30 Ground Load",
+  windMph: 105,
+  snowLoad: "30 Ground Load",
   state: state ?? m.meta.defaultStateLabel ?? "",
   promoTier: "No Promotional Sale",
-  taxPct: 0.07,
+  taxPct: 0,
 });
 
-export function CalculatorForm({ matrices, regionId, defaultState, defaultSnowLoad, defaultWindMph }: CalculatorFormProps) {
+export function CalculatorForm({ matrices, regionId, defaultState }: CalculatorFormProps) {
   const [config, setConfig] = useState<BuildingConfig>(() =>
-    defaultConfig(matrices, defaultState, defaultSnowLoad, defaultWindMph)
+    defaultConfig(matrices, defaultState)
   );
 
   const result = useMemo(() => priceBuilding(config, matrices), [config, matrices]);

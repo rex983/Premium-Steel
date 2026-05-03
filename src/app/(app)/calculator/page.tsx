@@ -69,9 +69,8 @@ export default function CalculatorPage() {
             matrices={pricing.matrices}
             regionId={regionId}
             defaultState={stateDefault ? stateLabel(stateDefault.state_code) : undefined}
-            defaultSnowLoad={stateDefault?.default_snow_load}
-            defaultWindMph={stateDefault?.default_wind_mph}
-            // Force a remount when region/state changes so defaults reset cleanly
+            // Snow load + wind always default to 30 GL / 105 MPH; state-defaults
+            // only drive region selection now.
             key={`${regionId}|${stateCode}|${pricing.id}`}
           />
         )}

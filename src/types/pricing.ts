@@ -59,10 +59,17 @@ export interface DoorOption {
   label: string; // e.g. "10x10", "12x12"
   price: number;
 }
+export interface RudSealAdder {
+  size: string;        // "10x10"
+  brushSeal: number;   // VLOOKUP col 2
+  headerSeal: number;  // VLOOKUP col 3
+}
 export interface AccessoriesMatrix {
   walkInDoors: AccessoryItem[];      // WID
   windows: AccessoryItem[];          // Window
   rollUpDoors: DoorOption[];         // RUD (size → price)
+  rudSidePositionAdders: AccessoryItem[]; // W5:X6 — { SIDE: 280 }
+  rudSealAdders: RudSealAdder[];     // R1:T25 — per-size seal adders
   windowsExtras: AccessoryItem[];    // window add-ons
   frameOuts: AccessoryItem[];        // frame-out per size
   jtrim: AccessoryItem[];            // J-Trim

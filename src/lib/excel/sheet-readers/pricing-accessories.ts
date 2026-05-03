@@ -1,5 +1,5 @@
 import type { WorkSheet } from "xlsx";
-import type { AccessoriesMatrix, AccessoryItem, DoorOption } from "@/types/pricing";
+import type { AccessoriesMatrix, AccessoryItem, DoorOption, RudSealAdder } from "@/types/pricing";
 import { getString, getNumber, num, str } from "./utils";
 import { rawGrid, type RawGrid } from "./_raw-grid";
 
@@ -27,6 +27,8 @@ export function readAccessories(sheet: WorkSheet): AccessoriesMatrix {
     walkInDoors: readLabelPriceList(sheet, "H", 2, 11, "I"),
     windows: readLabelPriceList(sheet, "A", 2, 10, "B"),
     rollUpDoors: readRollUpDoors(sheet),
+    rudSidePositionAdders: readRudSidePositionAdders(sheet),
+    rudSealAdders: readRudSealAdders(sheet),
     windowsExtras: [],
     frameOuts: [],
     jtrim: readLabelPriceList(sheet, "C", 37, 39, "D"),
@@ -75,6 +77,43 @@ function readRollUpDoors(sheet: WorkSheet): DoorOption[] {
     if (!label) continue;
     const price = num(sheet[`Q${r}`]?.v);
     items.push({ label, price });
+  }
+  return items;
+}
+
+/**
+ * Roll-up door side/end position adder. Spreadsheet stores it at W5:X6:
+ *   W5 "Type"   X5 "10' Header"
+ *   W6 "SIDE"   X6 280
+ * The quote uses VLOOKUP(position, W5:X6, 2, FALSE) wrapped in IFERROR(...,"0"),
+ * so any non-SIDE position (e.g. END) returns 0.
+ */
+function readRudSidePositionAdders(sheet: WorkSheet): AccessoryItem[] {
+  const items: AccessoryItem[] = [];
+  for (let r = 5; r <= 10; r++) {
+    const label = str(sheet[`W${r}`]?.v);
+    if (!label || label.toLowerCase() === "type") continue;
+    const price = num(sheet[`X${r}`]?.v);
+    items.push({ label, price });
+  }
+  return items;
+}
+
+/**
+ * Roll-up door seal adder. Spreadsheet R1:T25 with R = size, S = "Brush Seal Option",
+ * T = "Header Seal only Option". Quote uses VLOOKUP(size, R1:T25, col, FALSE) where
+ * col = 2 for Brush Seal, 3 for Header Seal only.
+ */
+function readRudSealAdders(sheet: WorkSheet): RudSealAdder[] {
+  const items: RudSealAdder[] = [];
+  for (let r = 2; r <= 25; r++) {
+    const size = str(sheet[`R${r}`]?.v);
+    if (!size) continue;
+    items.push({
+      size,
+      brushSeal: num(sheet[`S${r}`]?.v),
+      headerSeal: num(sheet[`T${r}`]?.v),
+    });
   }
   return items;
 }

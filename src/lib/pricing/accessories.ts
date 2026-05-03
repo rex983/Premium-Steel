@@ -49,17 +49,31 @@ export function calcRollUpDoors(
   config: BuildingConfig,
   matrices: AccessoriesMatrix
 ): number[] {
-  // Phase-3 first cut. Spreadsheet formula:
-  //   Z28 = base(size) + sidePosition(K33) + sealOption(M33-based VLOOKUP)
-  //   AC28 = Z28 × qty (H33)
-  //
-  // TODO Phase-3b: implement side/end position adder (W6:X6 lookup) and seal-option
-  // adder (R1:T25 lookup with column 2 for Brush Seal, column 3 for Header Seal).
-  // Without these, we miss ~$440/door when "Header Seal only Option" is selected.
+  // Spreadsheet formula (Pricing - Accessories!Z28..AC30):
+  //   Y = VLOOKUP(size, P2:Q25, 2)              base price by size
+  //   U = IFERROR(VLOOKUP(position, W5:X6, 2),0) SIDE→280, END→0
+  //   AA = IFERROR(VLOOKUP(size, R1:T25, col),0) col=2 brush, 3 header-seal
+  //   Z = Y + U + AA
+  //   AC = Z × qty
   const prices: number[] = [];
   for (const door of config.rollUpDoors || []) {
-    const item = matrices.rollUpDoors.find((d) => d.label === door.size);
-    prices.push(door.qty * (item?.price ?? 0));
+    if (!door.size || door.qty <= 0) {
+      prices.push(0);
+      continue;
+    }
+    const base = matrices.rollUpDoors.find((d) => d.label === door.size)?.price ?? 0;
+    const sideAdder =
+      matrices.rudSidePositionAdders?.find((p) => p.label === door.position)?.price ?? 0;
+    let sealAdder = 0;
+    const seal = (door.headerSeal ?? "").trim();
+    if (seal && matrices.rudSealAdders) {
+      const sealRow = matrices.rudSealAdders.find((s) => s.size === door.size);
+      if (sealRow) {
+        if (seal.includes("Brush Seal Option")) sealAdder = sealRow.brushSeal;
+        else if (seal.includes("Header Seal only Option")) sealAdder = sealRow.headerSeal;
+      }
+    }
+    prices.push(door.qty * (base + sideAdder + sealAdder));
   }
   while (prices.length < 3) prices.push(0);
   return prices;

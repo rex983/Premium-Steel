@@ -227,6 +227,21 @@ export function CalculatorForm({
               </SelectContent>
             </Select>
           </div>
+          <div className="space-y-1 col-span-2">
+            <Label className="text-xs">Roof Overhang</Label>
+            <Select
+              value={config.overhang || NONE}
+              onValueChange={(v) => update("overhang", v === NONE ? "" : v)}
+            >
+              <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value={NONE}>None</SelectItem>
+                {(matrices.meta.overhangOptions ?? []).map((o) => (
+                  <SelectItem key={o} value={o}>{o}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </Section>
 
         <Section title="Walls" contentClassName="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -255,6 +270,86 @@ export function CalculatorForm({
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {[0, 1, 2].map((n) => <SelectItem key={n} value={String(n)}>{n}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1">
+              <Label className="text-xs">Wainscot (Side)</Label>
+              <Select
+                value={config.wainscotSide || NONE}
+                onValueChange={(v) =>
+                  update("wainscotSide", v === NONE ? "" : v)
+                }
+              >
+                <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NONE}>None</SelectItem>
+                  <SelectItem value="Side Wall">Side Wall</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Wainscot Side Qty</Label>
+              <Select
+                value={String(config.wainscotSideQty ?? 0)}
+                onValueChange={(v) =>
+                  update("wainscotSideQty", Number(v) as 0 | 1 | 2)
+                }
+                disabled={!config.wainscotSide}
+              >
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {[0, 1, 2].map((n) => <SelectItem key={n} value={String(n)}>{n}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div />
+
+            <div className="space-y-1">
+              <Label className="text-xs">Wainscot (End)</Label>
+              <Select
+                value={config.wainscotEnd || NONE}
+                onValueChange={(v) =>
+                  update("wainscotEnd", v === NONE ? "" : v)
+                }
+              >
+                <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NONE}>None</SelectItem>
+                  <SelectItem value="End Wall">End Wall</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Wainscot End Qty</Label>
+              <Select
+                value={String(config.wainscotEndQty ?? 0)}
+                onValueChange={(v) =>
+                  update("wainscotEndQty", Number(v) as 0 | 1 | 2)
+                }
+                disabled={!config.wainscotEnd}
+              >
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {[0, 1, 2].map((n) => <SelectItem key={n} value={String(n)}>{n}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div />
+
+            <div className="space-y-1 md:col-span-3">
+              <Label className="text-xs">Base Trim</Label>
+              <Select
+                value={config.baseTrim || NONE}
+                onValueChange={(v) => update("baseTrim", v === NONE ? "" : v)}
+              >
+                <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NONE}>None</SelectItem>
+                  {(matrices.accessories.baseTrim ?? []).map((b) => (
+                    <SelectItem key={b.label} value={b.label}>{b.label}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

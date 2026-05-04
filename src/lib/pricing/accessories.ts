@@ -96,8 +96,19 @@ export function calcInteriorWalls(config: BuildingConfig, matrices: AccessoriesM
   return config.interiorWalls.qty * (item?.price ?? 0);
 }
 
+/**
+ * Base Trim — Pricing - Accessories!J22 = VLOOKUP(G42, H16:I17, 2)
+ *   I16 = ((width+length)*2) × G16    (perimeter × $/linear ft)
+ * Only "Full Perimeter Base Trim" has a non-zero price; H17 is a blank fallback.
+ */
+export function calcBaseTrim(config: BuildingConfig, matrices: AccessoriesMatrix): number {
+  if (!config.baseTrim) return 0;
+  if (!/Full Perimeter/i.test(config.baseTrim)) return 0;
+  const rate = matrices.bt ?? 0;
+  const perimeter = (config.width + config.length) * 2;
+  return Math.round(perimeter * rate);
+}
 /** Phase-3 placeholder: these accessory categories require deeper formula tracing. */
-export function calcBaseTrim(_config: BuildingConfig, _matrices: AccessoriesMatrix): number { return 0; }
 export function calcFoamClosure(_config: BuildingConfig, _matrices: AccessoriesMatrix): number { return 0; }
 export function calc26gaUpgrade(_config: BuildingConfig, _matrices: AccessoriesMatrix): number { return 0; }
 export function calcPremiumColors(_config: BuildingConfig, _matrices: AccessoriesMatrix): number { return 0; }

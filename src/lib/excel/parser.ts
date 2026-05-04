@@ -24,7 +24,7 @@ import { readSnowGirts } from "./sheet-readers/snow-girts";
 import { readSnowDiagonalBracing } from "./sheet-readers/snow-diagonal-bracing";
 import { validateMatrices, type ValidationResult } from "./validators";
 
-export const PARSER_VERSION = "0.2.1";
+export const PARSER_VERSION = "0.2.2";
 
 export interface ParseResult {
   detection: RegionDetection;

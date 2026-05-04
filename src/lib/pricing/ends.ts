@@ -38,15 +38,27 @@ export function calcEnds(config: BuildingConfig, matrices: EndsMatrix & { raw?: 
   return Math.round(price * END_QTY_MULTIPLIER(config.endsQty));
 }
 
+/**
+ * Pricing - Ends!E41 = IFS(E40=2,E39*2, E40=1,E39, E40=0,0)
+ *   E39 = INDEX(B30:T31, 2, MATCH("{width}-{type}-{V|HZ}", B30:T30, 0))
+ *   type = "EW" if user picked "End Wall", else "0"
+ * Headers cover widths 0/12/18/20/22 only — anything else returns 0.
+ */
 export function calcWainscotEnd(
   config: BuildingConfig,
   matrices: EndsMatrix & { raw?: RawGrid },
   wainscotQty: 0 | 1 | 2
 ): number {
   if (wainscotQty === 0 || !config.wainscotEnd) return 0;
-  // Spreadsheet has a similar pattern; without re-tracing every range we use base price as proxy.
-  // TODO: precise range from Pricing-Ends wainscot matrix.
-  return 0;
+  const grid = matrices.raw;
+  if (!grid) return 0;
+  const orientation = config.endsPanel === "Vertical" ? "V" : "HZ";
+  const code = /end\s*wall/i.test(config.wainscotEnd) ? "EW" : "0";
+  const key = `${config.width}-${code}-${orientation}`;
+  const colIdx = findHeaderCol(grid, 30, key, "B", "T");
+  if (colIdx === 0) return 0;
+  const price = num(gridCell(grid, 31, colIdxToLetter(colIdx)));
+  return Math.round(price * wainscotQty); // 0→0, 1→×1, 2→×2
 }
 
 function findHeaderCol(grid: RawGrid, row: number, key: string, startCol: string, endCol: string): number {

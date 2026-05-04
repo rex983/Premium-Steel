@@ -32,16 +32,30 @@ export function readAccessories(sheet: WorkSheet): AccessoriesMatrix {
     windowsExtras: [],
     frameOuts: [],
     jtrim: readLabelPriceList(sheet, "C", 37, 39, "D"),
-    baseTrim: [],
+    baseTrim: readBaseTrimOptions(sheet),
     foamClosure: [],
     extras: readLabelPriceList(sheet, "A", 24, 35, "B"),
     interiorWalls: readLabelPriceList(sheet, "A", 27, 28, "B"),
     laborFees: readLabelPriceList(sheet, "O", 38, 40, "P"),
     headerSeal: readLabelPriceList(sheet, "P", 31, 32, "Q"),
-    bt: getNumber(sheet, "H16"),
+    bt: getNumber(sheet, "G16"),
     fcp: getNumber(sheet, "AG2"),
     raw: rawGrid(sheet, 68, 52),
   } as AccessoriesMatrix & { raw: RawGrid };
+}
+
+/**
+ * Base trim options — H16:I17. Only "Full Perimeter Base Trim" has a real price
+ * (computed dynamically from perimeter × G16 rate).
+ */
+function readBaseTrimOptions(sheet: WorkSheet): AccessoryItem[] {
+  const items: AccessoryItem[] = [];
+  for (let r = 16; r <= 17; r++) {
+    const label = str(sheet[`H${r}`]?.v);
+    if (!label) continue;
+    items.push({ label, price: 0 }); // engine computes dynamic price
+  }
+  return items;
 }
 
 /**

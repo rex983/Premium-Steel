@@ -236,7 +236,7 @@ export function CalculatorForm({
               <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value={NONE}>None</SelectItem>
-                {(matrices.meta.overhangOptions ?? []).map((o) => (
+                {(matrices.meta.overhangOptions ?? []).filter(Boolean).map((o) => (
                   <SelectItem key={o} value={o}>{o}</SelectItem>
                 ))}
               </SelectContent>
@@ -347,9 +347,11 @@ export function CalculatorForm({
                 <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value={NONE}>None</SelectItem>
-                  {(matrices.accessories.baseTrim ?? []).map((b) => (
-                    <SelectItem key={b.label} value={b.label}>{b.label}</SelectItem>
-                  ))}
+                  {(matrices.accessories.baseTrim ?? [])
+                    .filter((b) => b.label && b.label !== "0")
+                    .map((b) => (
+                      <SelectItem key={b.label} value={b.label}>{b.label}</SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>

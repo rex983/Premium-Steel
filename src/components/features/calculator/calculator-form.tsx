@@ -560,7 +560,7 @@ export function CalculatorForm({
         </Section>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-4 lg:sticky lg:top-4 lg:self-start lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto">
         <TotalsPanel result={result} />
         <EngineeringBreakdownPanel breakdown={result.engineeringBreakdown} />
         <div className="flex gap-2">

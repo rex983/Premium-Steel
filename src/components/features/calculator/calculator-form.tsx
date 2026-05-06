@@ -90,6 +90,7 @@ const defaultConfig = (m: PSBPricingMatrices, state?: string): BuildingConfig =>
   state: state ?? m.meta.defaultStateLabel ?? "",
   promoTier: "No Promotional Sale",
   taxPct: 0,
+  baseTrim: "0",
 });
 
 export function CalculatorForm({
@@ -341,14 +342,13 @@ export function CalculatorForm({
             <div className="space-y-1 md:col-span-3">
               <Label className="text-xs">Base Trim</Label>
               <Select
-                value={config.baseTrim || NONE}
-                onValueChange={(v) => update("baseTrim", v === NONE ? "" : v)}
+                value={config.baseTrim || "0"}
+                onValueChange={(v) => update("baseTrim", v)}
               >
-                <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
+                <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={NONE}>None</SelectItem>
                   {(matrices.accessories.baseTrim ?? [])
-                    .filter((b) => b.label && b.label !== "0")
+                    .filter((b) => b.label)
                     .map((b) => (
                       <SelectItem key={b.label} value={b.label}>{b.label}</SelectItem>
                     ))}

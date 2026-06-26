@@ -28,7 +28,7 @@ export function validateMatrices(m: PSBPricingMatrices): ValidationResult {
     windowCount: m.accessories.windows.length,
     anchorPackageCount: m.anchors.packages.length,
     windWarrantyCount: m.anchors.windWarranties.length,
-    insulationOptionCount: m.insulation.options.length,
+    insulationMaterialCount: m.insulation.materials?.length ?? 0,
     promotionTierCount: m.promotions.tiers.length,
     plansLengthCount: Object.keys(m.plans.plans).length,
     snowLoadCount: m.snow.changers.snowLoads.length,

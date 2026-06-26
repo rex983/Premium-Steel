@@ -526,7 +526,7 @@ export function CalculatorForm({
               </Select>
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">Insulation</Label>
+              <Label className="text-xs">Insulation Material</Label>
               <Select
                 value={config.insulation || NONE}
                 onValueChange={(v) => update("insulation", v === NONE ? "" : v)}
@@ -534,8 +534,8 @@ export function CalculatorForm({
                 <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value={NONE}>None</SelectItem>
-                  {Array.from(new Set(matrices.insulation.options.map((o) => o.label))).map((label) => (
-                    <SelectItem key={label} value={label}>{label}</SelectItem>
+                  {(matrices.insulation.materials ?? []).map((m) => (
+                    <SelectItem key={m.label} value={m.label}>{m.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -545,12 +545,13 @@ export function CalculatorForm({
             <Select
               value={config.insulationType || NONE}
               onValueChange={(v) => update("insulationType", v === NONE ? "" : v)}
+              disabled={!config.insulation}
             >
               <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value={NONE}>—</SelectItem>
-                <SelectItem value="Roof Only">Roof Only</SelectItem>
-                <SelectItem value="Fully Insulated-Vertical">Fully Insulated</SelectItem>
+                <SelectItem value="Vertical Roof Only">Vertical Roof Only</SelectItem>
+                <SelectItem value="Fully Insulated-Vertical">Fully Insulated-Vertical</SelectItem>
               </SelectContent>
             </Select>
           </div>

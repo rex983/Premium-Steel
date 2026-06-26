@@ -96,7 +96,10 @@ export interface AnchorsMatrix {
 // Pricing - Insulated
 // =============================================================================
 export interface InsulationMatrix {
-  options: { label: string; type: string; coverage: string; price: number }[];
+  /** Material rate table from Pricing - Insulated!S2:T3 ($/sqft). */
+  materials: { label: string; rate: number }[];
+  /** Legacy field kept so pre-0.3.0 uploads still deserialize cleanly. */
+  options?: { label: string; type: string; coverage: string; price: number }[];
 }
 
 // =============================================================================

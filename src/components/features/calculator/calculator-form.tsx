@@ -363,7 +363,7 @@ export function CalculatorForm({
             const size = entry?.size ?? "";
             return (
               <div key={idx} className="grid grid-cols-12 gap-2 items-end">
-                <div className="col-span-5 space-y-1">
+                <div className="col-span-4 space-y-1">
                   <Label className="text-xs">Size</Label>
                   <Select
                     value={size || NONE}
@@ -378,7 +378,7 @@ export function CalculatorForm({
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="col-span-3 space-y-1">
+                <div className="col-span-2 space-y-1">
                   <Label className="text-xs">Qty</Label>
                   <Input
                     type="number"
@@ -388,7 +388,7 @@ export function CalculatorForm({
                     disabled={!size}
                   />
                 </div>
-                <div className="col-span-4 space-y-1">
+                <div className="col-span-3 space-y-1">
                   <Label className="text-xs">Position</Label>
                   <Select
                     value={entry?.position ?? "SIDE"}
@@ -399,6 +399,21 @@ export function CalculatorForm({
                     <SelectContent>
                       <SelectItem value="SIDE">Side</SelectItem>
                       <SelectItem value="END">End</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="col-span-3 space-y-1">
+                  <Label className="text-xs">Seal</Label>
+                  <Select
+                    value={entry?.headerSeal || NONE}
+                    onValueChange={(v) => setRud(idx, { headerSeal: v === NONE ? "" : v })}
+                    disabled={!size}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={NONE}>None</SelectItem>
+                      <SelectItem value="Brush Seal Option">Brush</SelectItem>
+                      <SelectItem value="Header Seal only Option">Header Only</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

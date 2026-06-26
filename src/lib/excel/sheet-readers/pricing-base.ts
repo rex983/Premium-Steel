@@ -1,6 +1,6 @@
 import type { WorkSheet } from "xlsx";
-import type { BaseMatrix } from "@/types/pricing";
-import { getString, getNumber, num } from "./utils";
+import type { BaseMatrix, RateOption, GutterMatrix } from "@/types/pricing";
+import { getString, getNumber, num, str } from "./utils";
 
 /**
  * Pricing - Base sheet — main W×L×Gauge price matrix.
@@ -96,6 +96,87 @@ export function readOverhang(sheet: WorkSheet): Record<string, Record<number, nu
     }
   }
   return result;
+}
+
+/**
+ * Pricing - Base!J25:K27 — 26ga upgrade panel-type rates.
+ *   J25 "26ga AG Panel"   K25 0.125
+ *   J26 "26ga PBR Panel"  K26 0.25
+ */
+export function read26gaUpgrade(sheet: WorkSheet): RateOption[] {
+  const items: RateOption[] = [];
+  for (let r = 25; r <= 27; r++) {
+    const label = str(sheet[`J${r}`]?.v).trim();
+    if (!label || label === "0") continue;
+    const rate = num(sheet[`K${r}`]?.v);
+    if (rate <= 0) continue;
+    items.push({ label, rate });
+  }
+  return items;
+}
+
+/**
+ * Pricing - Base!S24:T27 — premium color rates.
+ *   S24 "Copper" → 0.05, S25 "Sapphire Blue" → 0.03, S26 "Bright Red" → 0.03
+ */
+export function readPremiumColors(sheet: WorkSheet): RateOption[] {
+  const items: RateOption[] = [];
+  for (let r = 24; r <= 27; r++) {
+    const label = str(sheet[`S${r}`]?.v).trim();
+    if (!label || label === "0") continue;
+    const rate = num(sheet[`T${r}`]?.v);
+    if (rate <= 0) continue;
+    items.push({ label, rate });
+  }
+  return items;
+}
+
+/**
+ * Pricing - Base!J31:K33 — color screw rates.
+ *   J31 "Roof Only - Color Screws"            → 0.03
+ *   J32 "Fully Enclosed - Color Screws Option" → 0.03
+ *
+ * NOTE: the label itself encodes the coverage; the spreadsheet has a single
+ * dropdown at G45 (no separate coverage cell). Each option self-describes
+ * whether it's roof-only or fully-enclosed.
+ */
+export function readColorScrews(sheet: WorkSheet): RateOption[] {
+  // Label encodes coverage ("Roof Only - Color Screws" vs "Fully Enclosed - Color Screws Option").
+  const items: RateOption[] = [];
+  for (let r = 31; r <= 33; r++) {
+    const label = str(sheet[`J${r}`]?.v).trim();
+    if (!label || label === "0") continue;
+    const rate = num(sheet[`K${r}`]?.v);
+    if (rate <= 0) continue;
+    items.push({ label, rate });
+  }
+  return items;
+}
+
+/**
+ * Gutter — AA28 ($/lf), AD25:AE26 side multiplier, S24:T27 colors (display only).
+ *
+ * Formula:
+ *   total_lf = ((length × side_mult) + 2.5) + ((height + 1.75) × (length/25) × side_mult)
+ *   price    = total_lf × rate
+ */
+export function readGutter(sheet: WorkSheet): GutterMatrix {
+  const ratePerLf = num(sheet["AA28"]?.v) || 17.5;
+  const sides: { label: string; multiplier: number }[] = [];
+  for (let r = 25; r <= 26; r++) {
+    const label = str(sheet[`AD${r}`]?.v).trim();
+    if (!label) continue;
+    const multiplier = num(sheet[`AE${r}`]?.v);
+    if (multiplier <= 0) continue;
+    sides.push({ label, multiplier });
+  }
+  const colors: string[] = [];
+  for (let r = 24; r <= 27; r++) {
+    const label = str(sheet[`S${r}`]?.v).trim();
+    if (!label || label === "0") continue;
+    colors.push(label);
+  }
+  return { ratePerLf, sides, colors };
 }
 
 /** Convert 1-indexed column number to letter ("A", "B", ..., "Z", "AA", ...). */

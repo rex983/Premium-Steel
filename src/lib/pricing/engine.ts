@@ -13,6 +13,8 @@ import {
   calcColorScrews, calcGutter, calcExtraSheetMetal, calcFrameOuts, calcJTrim,
   calcLaborFees,
 } from "./accessories";
+// rate-on-coverage accessories need basePrice + sides + ends to compute the
+// "Fully Enclosed" branch, so they take an extra argument bag.
 import { calcAnchors } from "./anchors";
 import { calcInsulation } from "./insulation";
 import { calcEquipmentLabor } from "./labor";
@@ -76,15 +78,17 @@ export function priceBuilding(
   push(lineItems, "wainscotEnd", "Wainscot (End)", calcWainscotEnd(config, matrices.ends, (config.wainscotEndQty ?? 0) as 0 | 1 | 2));
   push(lineItems, "wainscotSide", "Wainscot (Side)", calcWainscotSide(config, matrices.sides, (config.wainscotSideQty ?? 0) as 0 | 1 | 2));
 
-  // Trim / Foam / Gutter / Screws / 26ga / Premium
+  // Trim / Foam / Gutter / Screws / 26ga / Premium / Frame Outs / Sheet Metal
+  const rateCtx = { basePrice, sidesPrice: sides, endsPrice: ends };
   push(lineItems, "baseTrim", "Base Trim", calcBaseTrim(config, matrices.accessories));
   push(lineItems, "foam", "Foam Closure Package", calcFoamClosure(config, matrices.accessories));
   push(lineItems, "gutter", '6" K-style Gutter', calcGutter(config, matrices.accessories));
-  push(lineItems, "colorScrews", "Color Screws", calcColorScrews(config, matrices.accessories));
+  push(lineItems, "colorScrews", "Color Screws", calcColorScrews(config, matrices.accessories, rateCtx));
   push(lineItems, "extraSheet", "Extra Sheet Metal", calcExtraSheetMetal(config, matrices.accessories));
+  push(lineItems, "jtrim", "J-Trim", calcJTrim(config, matrices.accessories));
   push(lineItems, "frameOuts", "Frame Outs", calcFrameOuts(config, matrices.accessories));
-  push(lineItems, "26ga", "26ga Upgrade", calc26gaUpgrade(config, matrices.accessories));
-  push(lineItems, "premium", "Premium Colors", calcPremiumColors(config, matrices.accessories));
+  push(lineItems, "26ga", "26ga Upgrade", calc26gaUpgrade(config, matrices.accessories, rateCtx));
+  push(lineItems, "premium", "Premium Colors", calcPremiumColors(config, matrices.accessories, rateCtx));
 
   // Extras + interior walls
   const extras = calcExtras(config, matrices.accessories);

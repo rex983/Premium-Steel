@@ -49,23 +49,25 @@ export interface BuildingConfig {
   insulationType: string; // M37 — "Fully Insulated-Vertical", "Roof Only", etc.
 
   // Roof pitch & overhang
-  pitch: 0 | 4 | 5 | 6;   // I38
+  pitch: 0 | 1 | 2 | 3 | 4 | 5 | 6;   // I38 — 0–3 free, 4/5/6 price from Pricing - Base!A36:J39
   pitchUnit: string;      // K38 = "12P"
   overhang: string;       // G39
 
   // Trim, gutter, premium
   baseTrim?: string;      // G42
-  foamClosure?: string;   // I43
-  gutterColor?: string;   // G44
-  gutterSide?: string;    // L44 (One Side / Both Sides)
+  foamClosure?: string;   // I43 — "Foam Closure Package" or ""
+  gutterColor?: string;   // G44 (display-only — doesn't affect price)
+  gutterSide?: string;    // L44 ("One Side" / "Both Sides")
   colorScrews?: string;   // G45
-  extraSheetMetal?: string; // G46
-  jtrim?: string;         // P46
-  frameOuts?: { width: number; height: number; qty: number; position: "SIDE" | "END"; gauge: string }; // G47/I47/L47/N47/K47/P47
-  upgrade26ga?: string;   // G48
-  upgrade26gaCoverage?: string; // L48
-  premiumColor?: string;  // G49
-  premiumColorCoverage?: string; // L49
+  extraSheetMetal?: string;        // G46 sheet metal label
+  extraSheetMetalQty?: number;     // K46
+  jtrim?: string;                  // P46 j-trim label
+  jtrimQty?: number;               // O46
+  frameOuts?: { width: number; height: number; qty: number; position: "SIDE" | "END" }; // K47/N47/Q47 + position
+  upgrade26ga?: string;            // G48
+  upgrade26gaCoverage?: string;    // L48 — "Roof Only" | "Fully Enclosed"
+  premiumColor?: string;           // G49
+  premiumColorCoverage?: string;   // L49 — "Roof Only" | "Fully Enclosed"
 
   // Wainscot
   wainscotEnd?: string;   // G40
@@ -77,8 +79,8 @@ export interface BuildingConfig {
   extras?: Array<{ label: string; qty: number }>; // G50/G51 + Q50/O51
   interiorWalls?: { label: string; qty: number }; // G52
 
-  // Labor fees (up to 2)
-  laborFees?: Array<string>; // G53, G54
+  // Labor fees (up to 2 lines — G53 / G54)
+  laborFees?: Array<string>;
 
   // Engineering inputs
   windMph: number;        // J55 — typically 105

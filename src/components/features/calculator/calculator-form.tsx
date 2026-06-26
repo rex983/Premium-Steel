@@ -557,6 +557,269 @@ export function CalculatorForm({
           </div>
         </Section>
 
+        <Section title="Upgrades" contentClassName="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label className="text-xs">26ga Panel Upgrade</Label>
+              <Select
+                value={config.upgrade26ga || NONE}
+                onValueChange={(v) => update("upgrade26ga", v === NONE ? "" : v)}
+              >
+                <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NONE}>None</SelectItem>
+                  {(matrices.accessories.upgrade26ga ?? []).map((p) => (
+                    <SelectItem key={p.label} value={p.label}>{p.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">26ga Coverage</Label>
+              <Select
+                value={config.upgrade26gaCoverage || NONE}
+                onValueChange={(v) => update("upgrade26gaCoverage", v === NONE ? "" : v)}
+                disabled={!config.upgrade26ga}
+              >
+                <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NONE}>—</SelectItem>
+                  <SelectItem value="Roof Only">Roof Only</SelectItem>
+                  <SelectItem value="Fully Enclosed">Fully Enclosed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Premium Color</Label>
+              <Select
+                value={config.premiumColor || NONE}
+                onValueChange={(v) => update("premiumColor", v === NONE ? "" : v)}
+              >
+                <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NONE}>None</SelectItem>
+                  {(matrices.accessories.premiumColors ?? []).map((c) => (
+                    <SelectItem key={c.label} value={c.label}>{c.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Premium Color Coverage</Label>
+              <Select
+                value={config.premiumColorCoverage || NONE}
+                onValueChange={(v) => update("premiumColorCoverage", v === NONE ? "" : v)}
+                disabled={!config.premiumColor}
+              >
+                <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NONE}>—</SelectItem>
+                  <SelectItem value="Roof Only">Roof Only</SelectItem>
+                  <SelectItem value="Fully Enclosed">Fully Enclosed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1 col-span-2">
+              <Label className="text-xs">Color Screws</Label>
+              <Select
+                value={config.colorScrews || NONE}
+                onValueChange={(v) => update("colorScrews", v === NONE ? "" : v)}
+              >
+                <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NONE}>None</SelectItem>
+                  {(matrices.accessories.colorScrews ?? []).map((c) => (
+                    <SelectItem key={c.label} value={c.label}>{c.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+        </Section>
+
+        <Section title='6&quot; K-style Gutter' contentClassName="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label className="text-xs">Side</Label>
+              <Select
+                value={config.gutterSide || NONE}
+                onValueChange={(v) => update("gutterSide", v === NONE ? "" : v)}
+              >
+                <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NONE}>None</SelectItem>
+                  {(matrices.accessories.gutter?.sides ?? []).map((s) => (
+                    <SelectItem key={s.label} value={s.label}>{s.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Color (display)</Label>
+              <Select
+                value={config.gutterColor || NONE}
+                onValueChange={(v) => update("gutterColor", v === NONE ? "" : v)}
+                disabled={!config.gutterSide}
+              >
+                <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NONE}>—</SelectItem>
+                  {(matrices.accessories.gutter?.colors ?? []).map((c) => (
+                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+        </Section>
+
+        <Section title="Trim & Closure" contentClassName="grid grid-cols-2 gap-3">
+            <div className="space-y-1 col-span-2">
+              <Label className="text-xs">Foam Closure</Label>
+              <Select
+                value={config.foamClosure || NONE}
+                onValueChange={(v) => update("foamClosure", v === NONE ? "" : v)}
+              >
+                <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NONE}>None</SelectItem>
+                  {matrices.accessories.foamClosure?.label && (
+                    <SelectItem value={matrices.accessories.foamClosure.label}>
+                      {matrices.accessories.foamClosure.label}
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Extra Sheet Metal</Label>
+              <Select
+                value={config.extraSheetMetal || NONE}
+                onValueChange={(v) => update("extraSheetMetal", v === NONE ? "" : v)}
+              >
+                <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NONE}>None</SelectItem>
+                  {(matrices.accessories.sheetMetal ?? []).filter((s) => s.price > 0).map((s) => (
+                    <SelectItem key={s.label} value={s.label}>{s.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Sheet Metal Qty</Label>
+              <Input
+                type="number"
+                min={0}
+                value={config.extraSheetMetalQty ?? 0}
+                onChange={(e) => update("extraSheetMetalQty", Number(e.target.value) || 0)}
+                disabled={!config.extraSheetMetal}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">J-Trim</Label>
+              <Select
+                value={config.jtrim || NONE}
+                onValueChange={(v) => update("jtrim", v === NONE ? "" : v)}
+              >
+                <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NONE}>None</SelectItem>
+                  {(matrices.accessories.jtrim ?? []).filter((s) => s.price > 0).map((s) => (
+                    <SelectItem key={s.label} value={s.label}>{s.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">J-Trim Qty</Label>
+              <Input
+                type="number"
+                min={0}
+                value={config.jtrimQty ?? 0}
+                onChange={(e) => update("jtrimQty", Number(e.target.value) || 0)}
+                disabled={!config.jtrim}
+              />
+            </div>
+        </Section>
+
+        <Section title="Frame Outs" contentClassName="grid grid-cols-12 gap-2 items-end">
+            <div className="col-span-3 space-y-1">
+              <Label className="text-xs">Width</Label>
+              <Select
+                value={String(config.frameOuts?.width ?? "")}
+                onValueChange={(v) => update("frameOuts", { ...(config.frameOuts ?? { width: 0, height: 0, qty: 0, position: "SIDE" }), width: Number(v) })}
+              >
+                <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                <SelectContent>
+                  {(matrices.accessories.frameOuts?.widths ?? []).filter((w) => w > 0).map((w) => (
+                    <SelectItem key={w} value={String(w)}>{w}&apos;</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="col-span-3 space-y-1">
+              <Label className="text-xs">Height</Label>
+              <Select
+                value={String(config.frameOuts?.height ?? "")}
+                onValueChange={(v) => update("frameOuts", { ...(config.frameOuts ?? { width: 0, height: 0, qty: 0, position: "SIDE" }), height: Number(v) })}
+                disabled={!config.frameOuts?.width}
+              >
+                <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                <SelectContent>
+                  {(matrices.accessories.frameOuts?.heights ?? []).map((h) => (
+                    <SelectItem key={h} value={String(h)}>{h}&apos;</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="col-span-2 space-y-1">
+              <Label className="text-xs">Qty</Label>
+              <Input
+                type="number"
+                min={0}
+                value={config.frameOuts?.qty ?? 0}
+                onChange={(e) => update("frameOuts", { ...(config.frameOuts ?? { width: 0, height: 0, qty: 0, position: "SIDE" }), qty: Number(e.target.value) || 0 })}
+                disabled={!config.frameOuts?.width || !config.frameOuts?.height}
+              />
+            </div>
+            <div className="col-span-4 space-y-1">
+              <Label className="text-xs">Position</Label>
+              <Select
+                value={config.frameOuts?.position ?? "SIDE"}
+                onValueChange={(v) => update("frameOuts", { ...(config.frameOuts ?? { width: 0, height: 0, qty: 0, position: "SIDE" }), position: v as "SIDE" | "END" })}
+                disabled={!config.frameOuts?.qty}
+              >
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="SIDE">Side</SelectItem>
+                  <SelectItem value="END">End</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+        </Section>
+
+        <Section title="Labor Fees" contentClassName="space-y-3">
+          {[0, 1].map((idx) => (
+            <div key={idx} className="space-y-1">
+              <Label className="text-xs">Labor Fee {idx + 1}</Label>
+              <Select
+                value={(config.laborFees?.[idx] ?? "") || NONE}
+                onValueChange={(v) => {
+                  const arr = [...(config.laborFees ?? [])];
+                  while (arr.length <= idx) arr.push("");
+                  arr[idx] = v === NONE ? "" : v;
+                  update("laborFees", arr);
+                }}
+              >
+                <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NONE}>None</SelectItem>
+                  {(matrices.accessories.laborFees?.labels ?? []).map((l) => (
+                    <SelectItem key={l} value={l}>{l}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ))}
+        </Section>
+
         <Section title="Engineering" contentClassName="grid grid-cols-2 gap-3">
             <div className="space-y-1">
               <Label className="text-xs">Snow Load</Label>

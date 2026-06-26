@@ -1,5 +1,8 @@
 import type { WorkSheet } from "xlsx";
-import type { AccessoriesMatrix, AccessoryItem, DoorOption, RudSealAdder } from "@/types/pricing";
+import type {
+  AccessoriesMatrix, AccessoryItem, DoorOption, RudSealAdder,
+  FoamClosureMatrix, FrameOutsMatrix, LaborFeeMatrix,
+} from "@/types/pricing";
 import { getString, getNumber, num, str } from "./utils";
 import { rawGrid, type RawGrid } from "./_raw-grid";
 
@@ -30,18 +33,81 @@ export function readAccessories(sheet: WorkSheet): AccessoriesMatrix {
     rudSidePositionAdders: readRudSidePositionAdders(sheet),
     rudSealAdders: readRudSealAdders(sheet),
     windowsExtras: [],
-    frameOuts: [],
     jtrim: readLabelPriceList(sheet, "C", 37, 39, "D"),
     baseTrim: readBaseTrimOptions(sheet),
-    foamClosure: [],
     extras: readLabelPriceList(sheet, "A", 24, 35, "B"),
     interiorWalls: readLabelPriceList(sheet, "A", 27, 28, "B"),
-    laborFees: readLabelPriceList(sheet, "O", 38, 40, "P"),
     headerSeal: readLabelPriceList(sheet, "P", 31, 32, "Q"),
+    sheetMetal: readLabelPriceList(sheet, "A", 37, 40, "B"),
+    foamClosure: readFoamClosure(sheet),
+    frameOuts: readFrameOuts(sheet),
+    laborFees: readLaborFees(sheet),
     bt: getNumber(sheet, "G16"),
     fcp: getNumber(sheet, "AG2"),
     raw: rawGrid(sheet, 68, 52),
   } as AccessoriesMatrix & { raw: RawGrid };
+}
+
+/**
+ * Foam closure package — header AI2:AT2 (length in 5-ft steps from 20 to 75),
+ * prices AI3:AT3. The dropdown label (AS5) is the user-facing "Foam Closure
+ * Package" string.
+ */
+function readFoamClosure(sheet: WorkSheet): FoamClosureMatrix {
+  const cols = ["AI","AJ","AK","AL","AM","AN","AO","AP","AQ","AR","AS","AT"];
+  const byLength: { length: number; price: number }[] = [];
+  for (const c of cols) {
+    const length = num(sheet[`${c}2`]?.v);
+    const price = num(sheet[`${c}3`]?.v);
+    if (length > 0 && price > 0) byLength.push({ length, price });
+  }
+  byLength.sort((a, b) => a.length - b.length);
+  const label = str(sheet["AS5"]?.v).trim() || "Foam Closure Package";
+  return { byLength, label };
+}
+
+/**
+ * Frame outs — 2D matrix.
+ *   O53:O62 = heights (7,8,9,10,11,12,14,16,18,20)
+ *   Q52:U52 = widths  (4,8,12,16,20) — column P52 = "0" (placeholder)
+ *   Q53:U62 = prices[height][width]
+ *   O66:U67 = side/end adder by width
+ */
+function readFrameOuts(sheet: WorkSheet): FrameOutsMatrix {
+  const widthCols = ["Q","R","S","T","U"];
+  const widths: number[] = widthCols.map((c) => num(sheet[`${c}52`]?.v));
+  const heightRows = [53,54,55,56,57,58,59,60,61,62];
+  const heights: number[] = [];
+  const prices: number[][] = [];
+  for (const r of heightRows) {
+    const h = num(sheet[`O${r}`]?.v);
+    if (h <= 0) continue;
+    heights.push(h);
+    prices.push(widthCols.map((c) => num(sheet[`${c}${r}`]?.v)));
+  }
+  // Side adder row 66 (END at row 67 is always 0).
+  const sideAdderByWidth = widthCols.map((c) => num(sheet[`${c}66`]?.v));
+  return { heights, widths, prices, sideAdderByWidth };
+}
+
+/**
+ * Labor fees — labels in O38:O40, lengths in P37:Z37, prices in P38:Z40.
+ *   Lengths: 20,25,30,35,40,45,50,55,60,65,70
+ *   Labels: "Side Connection Fee Per Side", "Build Over Fee", "Cut Legs On Site"
+ */
+function readLaborFees(sheet: WorkSheet): LaborFeeMatrix {
+  const lengthCols = ["P","Q","R","S","T","U","V","W","X","Y","Z"];
+  const lengths = lengthCols.map((c) => num(sheet[`${c}37`]?.v));
+  const labelRows = [38, 39, 40];
+  const labels: string[] = [];
+  const prices: number[][] = [];
+  for (const r of labelRows) {
+    const label = str(sheet[`O${r}`]?.v).trim();
+    if (!label || label === "0") continue;
+    labels.push(label);
+    prices.push(lengthCols.map((c) => num(sheet[`${c}${r}`]?.v)));
+  }
+  return { labels, lengths, prices };
 }
 
 /**

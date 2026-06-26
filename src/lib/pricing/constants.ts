@@ -21,7 +21,15 @@ export const END_OPTIONS = ["Gable", "Enclosed Ends", "Extended Gable"] as const
 
 export const PANEL_ORIENTATIONS = ["Vertical", "Horizontal"] as const;
 
-export const PITCH_OPTIONS = [0, 4, 5, 6] as const;
+/**
+ * Pitch options shown in the calculator.
+ * 0–3 → no upcharge (table miss → 0 multiplier).
+ * 4 → 12% of base, 5 → 20%, 6 → 35% (from Pricing - Base!A36:J39).
+ *
+ * Note: the source workbook's pitch dropdown lists only 0/4/5/6. We expose
+ * 1/2/3 as zero-cost picks per product direction.
+ */
+export const PITCH_OPTIONS = [0, 1, 2, 3, 4, 5, 6] as const;
 
 /**
  * Snow load options (B9:P9 in Snow - Changers).

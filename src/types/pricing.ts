@@ -64,6 +64,44 @@ export interface RudSealAdder {
   brushSeal: number;   // VLOOKUP col 2
   headerSeal: number;  // VLOOKUP col 3
 }
+
+/** "Rate × coverage" lookup used by 26ga, premium colors, color screws.
+ *  rate × basePrice           (Roof Only)
+ *  rate × (basePrice + sides + ends)  (Fully Enclosed)
+ */
+export interface RateOption {
+  label: string;
+  rate: number;
+}
+
+/** Foam closure package — price by building length step. */
+export interface FoamClosureMatrix {
+  byLength: { length: number; price: number }[]; // 20–75 ft in 5-ft steps
+  label: string;                                  // dropdown value, e.g. "Foam Closure Package"
+}
+
+/** Frame-out base prices keyed (height, width), plus side adder by width. */
+export interface FrameOutsMatrix {
+  heights: number[];     // 7, 8, 9, 10, 11, 12, 14, 16, 18, 20
+  widths: number[];      // 0, 4, 8, 12, 16, 20
+  prices: number[][];    // prices[heightIdx][widthIdx]
+  sideAdderByWidth: number[]; // sideAdder[widthIdx]; END = 0
+}
+
+/** Labor fees keyed (label, length). */
+export interface LaborFeeMatrix {
+  labels: string[];     // "Side Connection Fee Per Side", "Build Over Fee", "Cut Legs On Site"
+  lengths: number[];    // 20–70 in 5-ft steps
+  prices: number[][];   // prices[labelIdx][lengthIdx]
+}
+
+/** Gutter at $/lf with a side multiplier (One Side: 1, Both Sides: 2). */
+export interface GutterMatrix {
+  ratePerLf: number;                                 // AA28 = 17.5
+  sides: { label: string; multiplier: number }[];    // AD25:AE26
+  colors: string[];                                  // display-only
+}
+
 export interface AccessoriesMatrix {
   walkInDoors: AccessoryItem[];      // WID
   windows: AccessoryItem[];          // Window
@@ -71,15 +109,22 @@ export interface AccessoriesMatrix {
   rudSidePositionAdders: AccessoryItem[]; // W5:X6 — { SIDE: 280 }
   rudSealAdders: RudSealAdder[];     // R1:T25 — per-size seal adders
   windowsExtras: AccessoryItem[];    // window add-ons
-  frameOuts: AccessoryItem[];        // frame-out per size
-  jtrim: AccessoryItem[];            // J-Trim
+  jtrim: AccessoryItem[];            // C37:D40 — { label, price }
   baseTrim: AccessoryItem[];         // base trim
-  foamClosure: AccessoryItem[];
-  extras: AccessoryItem[];           // extra sheet metal etc.
+  extras: AccessoryItem[];           // extras (Q50/O51 etc.)
   interiorWalls: AccessoryItem[];
-  laborFees: AccessoryItem[];
-  headerSeal: AccessoryItem[];       // seal options
-  // raw constants for engine
+  headerSeal: AccessoryItem[];       // seal dropdown labels
+  sheetMetal: AccessoryItem[];       // A37:B40 — { label, price }
+  // Pricing - Base accessory tables
+  upgrade26ga?: RateOption[];        // J25:K27 (panel type → rate)
+  premiumColors?: RateOption[];      // S24:T27 (color → rate)
+  colorScrews?: RateOption[];        // J31:K33 (option → rate)
+  gutter?: GutterMatrix;
+  // Pricing - Accessories tables
+  foamClosure?: FoamClosureMatrix;
+  frameOuts?: FrameOutsMatrix;
+  laborFees?: LaborFeeMatrix;
+  // raw constants
   bt?: number;
   fcp?: number;
 }

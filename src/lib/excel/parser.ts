@@ -3,7 +3,10 @@ import type { PSBPricingMatrices } from "@/types/pricing";
 import { detectRegion, type RegionDetection } from "./detect-region";
 import { getSheet, tryGetSheet } from "./sheet-readers/utils";
 import { readQuoteSheetMeta } from "./sheet-readers/quote-sheet";
-import { readBase, readRoofPitch, readOverhang } from "./sheet-readers/pricing-base";
+import {
+  readBase, readRoofPitch, readOverhang,
+  read26gaUpgrade, readPremiumColors, readColorScrews, readGutter,
+} from "./sheet-readers/pricing-base";
 import { readRoofStyle } from "./sheet-readers/pricing-roof-style";
 import { readLegs } from "./sheet-readers/pricing-legs";
 import { readSides } from "./sheet-readers/pricing-sides";
@@ -24,7 +27,7 @@ import { readSnowGirts } from "./sheet-readers/snow-girts";
 import { readSnowDiagonalBracing } from "./sheet-readers/snow-diagonal-bracing";
 import { validateMatrices, type ValidationResult } from "./validators";
 
-export const PARSER_VERSION = "0.3.0";
+export const PARSER_VERSION = "0.4.0";
 
 export interface ParseResult {
   detection: RegionDetection;
@@ -48,12 +51,25 @@ export function parsePsbWorkbook(
   const base = readBase(baseSheet);
   const roofPitch = readRoofPitch(baseSheet);
   const overhang = readOverhang(baseSheet);
+  const upgrade26ga = read26gaUpgrade(baseSheet);
+  const premiumColors = readPremiumColors(baseSheet);
+  const colorScrews = readColorScrews(baseSheet);
+  const gutter = readGutter(baseSheet);
 
   const roofStyle = readRoofStyle(getSheet(workbook, "Pricing - Roof Style"));
   const legs = readLegs(getSheet(workbook, "Pricing - Legs"));
   const sides = readSides(getSheet(workbook, "Pricing - Sides"));
   const ends = readEnds(getSheet(workbook, "Pricing - Ends"));
-  const accessories = readAccessories(getSheet(workbook, "Pricing - Accessories"));
+  const accessoriesRaw = readAccessories(getSheet(workbook, "Pricing - Accessories"));
+  // Merge the Pricing - Base accessory tables into the accessories matrix so
+  // engine functions only need one place to look.
+  const accessories = {
+    ...accessoriesRaw,
+    upgrade26ga,
+    premiumColors,
+    colorScrews,
+    gutter,
+  };
   const anchors = readAnchors(getSheet(workbook, "Pricing - Anchors"));
   const insulation = readInsulation(getSheet(workbook, "Pricing - Insulated"));
   const laborEquipment = readLaborEquipment(getSheet(workbook, "Pricing - Labor-EQ"));

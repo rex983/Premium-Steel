@@ -5,10 +5,17 @@ import { getString, num } from "./utils";
 
 /**
  * Pricing - Anchors — 67×26.
- * Defined-name sources:
- *   - Anchor      A38:A43    (6 anchor types)
- *   - Anchors     F54:F56    (MPH wind warranties)
- * Reference output: PSB-Quote Sheet R36 = 'Pricing - Anchors'!I57.
+ *
+ * Spreadsheet truth:
+ *   - Anchor type labels live at A38:A43; their REAL unit prices are at O45:P50.
+ *     (B38:B43 are zeros, not prices — easy mistake.)
+ *   - Wind warranty list at F54:F56 is a *mode switch*, not additive prices.
+ *     "105 MPH Wind Warranty" → use auto-computed qty (K47).
+ *     "Anchors Only"          → use user-entered qty (K36).
+ *   - Auto qty = perEndCount[`${width}x${sideMod}`] × 2 × mult,
+ *       where sideMod = ceil(end-RUD count / endsQty)
+ *       and mult = 0 for "Ground Concrete Supports", 1 otherwise.
+ *   - per-end count table: A1:B33 ("12x0"→2, "24x0"→4, "24x1"→4, "24x2"→6, …)
  */
 export function readAnchors(sheet: WorkSheet): AnchorsMatrix {
   const packages = [];
@@ -21,11 +28,35 @@ export function readAnchors(sheet: WorkSheet): AnchorsMatrix {
   for (let r = 54; r <= 56; r++) {
     const label = getString(sheet, `F${r}`);
     if (!label) continue;
-    windWarranties.push({ label, price: num(sheet[`G${r}`]?.v) });
+    // G column is a formula cell, so capture label only.
+    windWarranties.push({ label, price: 0 });
   }
+
+  // Real unit prices at O45:P50.
+  const unitPrices: { label: string; price: number }[] = [];
+  for (let r = 45; r <= 50; r++) {
+    const label = getString(sheet, `O${r}`);
+    if (!label) continue;
+    const price = num(sheet[`P${r}`]?.v);
+    if (price <= 0) continue;
+    unitPrices.push({ label, price });
+  }
+
+  // Per-end anchor count table at A1:B33.
+  const perEndCounts: Record<string, number> = {};
+  for (let r = 1; r <= 33; r++) {
+    const key = getString(sheet, `A${r}`);
+    if (!key) continue;
+    const count = num(sheet[`B${r}`]?.v);
+    if (count <= 0) continue;
+    perEndCounts[key] = count;
+  }
+
   return {
     packages,
     windWarranties,
+    unitPrices,
+    perEndCounts,
     raw: rawGrid(sheet, 67, 26),
   } as AnchorsMatrix & { raw: RawGrid };
 }

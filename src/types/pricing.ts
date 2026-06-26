@@ -133,8 +133,17 @@ export interface AccessoriesMatrix {
 // Pricing - Anchors
 // =============================================================================
 export interface AnchorsMatrix {
-  packages: AccessoryItem[];          // 6 anchor types
-  windWarranties: AccessoryItem[];    // MPH wind warranty options
+  /** Display-only labels for the dropdown (Earth Anchors, Asphalt, Concrete, …). */
+  packages: AccessoryItem[];
+  /** Wind warranty labels — switches calc mode (auto-qty vs user-qty). */
+  windWarranties: AccessoryItem[];
+  /** Real unit price per anchor type, from Pricing - Anchors!O45:P50. */
+  unitPrices?: { label: string; price: number }[];
+  /**
+   * Per-end anchor count from Pricing - Anchors!A1:B33, keyed `${width}x${sideMod}`
+   * where sideMod = ceil(endRudCount / endsQty). e.g. "24x0" → 4.
+   */
+  perEndCounts?: Record<string, number>;
 }
 
 // =============================================================================

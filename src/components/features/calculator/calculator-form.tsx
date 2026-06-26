@@ -525,6 +525,20 @@ export function CalculatorForm({
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-1 col-span-2">
+              <Label className="text-xs">
+                Anchor Qty {/Anchors\s*Only/i.test(config.windWarranty ?? "")
+                  ? "(applied)"
+                  : "(auto-calculated by wind warranty mode)"}
+              </Label>
+              <Input
+                type="number"
+                min={0}
+                value={config.anchorQty ?? 0}
+                onChange={(e) => update("anchorQty", Number(e.target.value) || 0)}
+                disabled={!/Anchors\s*Only/i.test(config.windWarranty ?? "")}
+              />
+            </div>
             <div className="space-y-1">
               <Label className="text-xs">Insulation Material</Label>
               <Select

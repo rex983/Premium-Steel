@@ -41,8 +41,9 @@ export interface BuildingConfig {
   }>;
 
   // Anchors
-  anchorType: string;     // E36 — "Concrete", etc.
-  windWarranty: string;   // L36 — "105 MPH Wind Warranty"
+  anchorType: string;     // E36 — "Concrete", "Earth Anchors (MHA- Helix)", etc.
+  windWarranty: string;   // L36 — "105 MPH Wind Warranty" or "Anchors Only"
+  anchorQty?: number;     // K36 — user-entered qty (only used when wind warranty = "Anchors Only")
 
   // Insulation
   insulation: string;     // E37

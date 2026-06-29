@@ -849,7 +849,20 @@ export function CalculatorForm({
                 </SelectContent>
               </Select>
             </div>
-          {numField("windMph", "Wind (MPH)")}
+          <div className="space-y-1">
+            <Label className="text-xs">Wind (MPH)</Label>
+            <Select
+              value={String(config.windMph)}
+              onValueChange={(v) => update("windMph", Number(v))}
+            >
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {[105, 115, 130, 140, 155, 165, 180].map((w) => (
+                  <SelectItem key={w} value={String(w)}>{w}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </Section>
       </div>
 

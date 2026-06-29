@@ -141,9 +141,14 @@ export interface AnchorsMatrix {
   unitPrices?: { label: string; price: number }[];
   /**
    * Per-end anchor count from Pricing - Anchors!A1:B33, keyed `${width}x${sideMod}`
-   * where sideMod = ceil(endRudCount / endsQty). e.g. "24x0" → 4.
+   * where sideMod = ceil(totalRudCount / endsQty). e.g. "24x0" → 4.
    */
   perEndCounts?: Record<string, number>;
+  /**
+   * Sides anchor count by (anchorType, length) from Pricing - Anchors!A38:S43
+   * (the C50 array formula). e.g. Earth Anchors @ 50ft → 18; Concrete row is all 0.
+   */
+  sidesAnchorsByTypeAndLength?: Record<string, Record<number, number>>;
 }
 
 // =============================================================================

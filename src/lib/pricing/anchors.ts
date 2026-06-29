@@ -30,24 +30,58 @@ export function calcAnchors(config: BuildingConfig, matrices: AnchorsMatrix & { 
   }
 
   if (/Wind\s*Warranty/i.test(warranty)) {
-    // Auto-qty path. Per-end count looked up by `${width}x${sideMod}`.
+    // Auto-qty path. Mirrors the K47=C50+J48 chain on Pricing - Anchors.
+    //   J48 = perEnd × 2 × mult  (anchors at the building ends)
+    //   C50 = sidesAnchorsByTypeAndLength[type][length]
+    //         (anchors running along the side perimeter — type-dependent;
+    //         Concrete contributes 0)
     const sideMod = computeSideMod(config);
     const mult = /Ground Concrete Supports/i.test(anchorType) ? 0 : 1;
     const perEnd = matrices.perEndCounts?.[`${config.width}x${sideMod}`] ?? 0;
-    const autoQty = perEnd * 2 * mult;
+    const endsAnchors = perEnd * 2 * mult;
+
+    const sidesAnchors = lookupSidesAnchors(matrices, anchorType, config.length);
+    const autoQty = endsAnchors + sidesAnchors;
     return Math.round(unitPrice * autoQty);
   }
 
   return cachedI57(matrices, true);
 }
 
-/** sideMod = ceil(end-RUD count / endsQty), clamped to [0, 3]. */
+/**
+ * sideMod = ROUNDUP(totalRudQty / endsCount). Matches Pricing - Anchors!E22,
+ * which feeds the per-end count lookup key `${width}x${sideMod}`.
+ *
+ * Counterintuitive: the workbook sums ALL roll-up doors regardless of
+ * position (=H33+H34+H35), not just end-mounted ones, despite the
+ * neighbouring label "How Many Roll Up Doors are There on the end". The
+ * label and the formula disagree; we mirror the formula because that's
+ * what produces the $40 answer the user sees in the workbook.
+ *
+ * If ends aren't "Enclosed Ends" or endsQty=0, the spreadsheet's chain
+ * errors out via VLOOKUP miss; we conservatively return 0 to avoid #N/A.
+ */
 function computeSideMod(config: BuildingConfig): number {
-  const endRuds = (config.rollUpDoors ?? [])
-    .filter((d) => d.position === "END" && d.qty > 0)
-    .reduce((s, d) => s + d.qty, 0);
-  const ends = Math.max(1, config.endsQty ?? 2);
-  return Math.min(3, Math.ceil(endRuds / ends));
+  if (!/Enclosed Ends/i.test(config.ends ?? "")) return 0;
+  const endsCount = config.endsQty ?? 0;
+  if (endsCount <= 0) return 0;
+  const totalRuds = (config.rollUpDoors ?? [])
+    .reduce((s, d) => s + (d.qty > 0 ? d.qty : 0), 0);
+  return Math.min(3, Math.ceil(totalRuds / endsCount));
+}
+
+/**
+ * Sides anchor count = matrix[anchorType][length]. The workbook's matrix
+ * has discrete length columns (0, 20, 25, …, 100); for an in-between length
+ * we round down to the nearest stored column (matches the spreadsheet's
+ * dropdown-driven exact MATCH behavior for valid inputs).
+ */
+function lookupSidesAnchors(matrices: AnchorsMatrix, anchorType: string, length: number): number {
+  const row = matrices.sidesAnchorsByTypeAndLength?.[anchorType];
+  if (!row) return 0;
+  if (row[length] !== undefined) return row[length];
+  const lengths = Object.keys(row).map(Number).filter((n) => n <= length).sort((a, b) => a - b);
+  return lengths.length > 0 ? row[lengths[lengths.length - 1]] : 0;
 }
 
 /** Pre-0.4.x stored matrices lacked unitPrices/perEndCounts. Fall back to

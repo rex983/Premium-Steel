@@ -52,11 +52,32 @@ export function readAnchors(sheet: WorkSheet): AnchorsMatrix {
     perEndCounts[key] = count;
   }
 
+  // Sides anchor matrix at A36:S43. Row 36 is a base count row; row 37 is
+  // length headers (B37=0, C37=20, ..., S37=100). Rows 38..43 hold the
+  // per-length sides anchor count for each anchor type (some rows are all 0
+  // — e.g. Concrete — meaning no side perimeter contribution).
+  const lengthCols = ["B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S"];
+  const lengthHeaders = lengthCols.map((c) => num(sheet[`${c}37`]?.v));
+  const sidesAnchorsByTypeAndLength: Record<string, Record<number, number>> = {};
+  for (let r = 38; r <= 43; r++) {
+    const type = getString(sheet, `A${r}`);
+    if (!type || /^0(\.0)?$/.test(type)) continue;
+    const row: Record<number, number> = {};
+    lengthCols.forEach((c, i) => {
+      const len = lengthHeaders[i];
+      if (len <= 0) return;
+      const v = num(sheet[`${c}${r}`]?.v);
+      row[len] = v;
+    });
+    sidesAnchorsByTypeAndLength[type] = row;
+  }
+
   return {
     packages,
     windWarranties,
     unitPrices,
     perEndCounts,
+    sidesAnchorsByTypeAndLength,
     raw: rawGrid(sheet, 67, 26),
   } as AnchorsMatrix & { raw: RawGrid };
 }

@@ -1,6 +1,6 @@
 import type { LegsMatrix } from "@/types/pricing";
 import type { BuildingConfig } from "./types";
-import { gridCell, num, type RawGrid } from "./_helpers";
+import { gridCell, num, colToLetter, letterToCol, type RawGrid } from "./_helpers";
 
 /**
  * Pricing - Legs
@@ -24,14 +24,14 @@ export function calcLegs(config: BuildingConfig, matrices: LegsMatrix & { raw?: 
   const colIdx = findValueInRow(grid, 1, config.length, "B", "S");
   const rowIdx = findHeightRow(grid, config.height, 2, 17);
   if (colIdx === 0 || rowIdx === 0) return 0;
-  return num(gridCell(grid, rowIdx, colIdxToLetter(colIdx)));
+  return num(gridCell(grid, rowIdx, colToLetter(colIdx)));
 }
 
 function findValueInRow(grid: RawGrid, row: number, value: number, startCol: string, endCol: string): number {
-  const start = colIdxFromLetter(startCol);
-  const end = colIdxFromLetter(endCol);
+  const start = letterToCol(startCol);
+  const end = letterToCol(endCol);
   for (let c = start; c <= end; c++) {
-    const v = num(gridCell(grid, row, colIdxToLetter(c)));
+    const v = num(gridCell(grid, row, colToLetter(c)));
     if (v === value) return c;
   }
   return 0;
@@ -42,18 +42,4 @@ function findHeightRow(grid: RawGrid, height: number, startRow: number, endRow: 
     if (v === height) return r;
   }
   return 0;
-}
-function colIdxFromLetter(letter: string): number {
-  let n = 0;
-  for (const ch of letter.toUpperCase()) n = n * 26 + (ch.charCodeAt(0) - 64);
-  return n;
-}
-function colIdxToLetter(col: number): string {
-  let s = "";
-  while (col > 0) {
-    const rem = (col - 1) % 26;
-    s = String.fromCharCode(65 + rem) + s;
-    col = Math.floor((col - 1) / 26);
-  }
-  return s;
 }

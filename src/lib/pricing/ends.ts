@@ -1,7 +1,7 @@
 import type { EndsMatrix } from "@/types/pricing";
 import type { BuildingConfig } from "./types";
 import { END_QTY_MULTIPLIER } from "./constants";
-import { gridCell, num, type RawGrid } from "./_helpers";
+import { gridCell, num, colToLetter, letterToCol, type RawGrid } from "./_helpers";
 
 /**
  * Pricing - Ends
@@ -34,7 +34,7 @@ export function calcEnds(config: BuildingConfig, matrices: EndsMatrix & { raw?: 
   const rowIdx = findLegHeightRow(grid, config.height, 2, 19);
   if (rowIdx === 0) return 0;
 
-  const price = num(gridCell(grid, rowIdx, colIdxToLetter(colIdx)));
+  const price = num(gridCell(grid, rowIdx, colToLetter(colIdx)));
   return Math.round(price * END_QTY_MULTIPLIER(config.endsQty));
 }
 
@@ -57,15 +57,15 @@ export function calcWainscotEnd(
   const key = `${config.width}-${code}-${orientation}`;
   const colIdx = findHeaderCol(grid, 30, key, "B", "T");
   if (colIdx === 0) return 0;
-  const price = num(gridCell(grid, 31, colIdxToLetter(colIdx)));
+  const price = num(gridCell(grid, 31, colToLetter(colIdx)));
   return Math.round(price * wainscotQty); // 0→0, 1→×1, 2→×2
 }
 
 function findHeaderCol(grid: RawGrid, row: number, key: string, startCol: string, endCol: string): number {
-  const start = colIdxFromLetter(startCol);
-  const end = colIdxFromLetter(endCol);
+  const start = letterToCol(startCol);
+  const end = letterToCol(endCol);
   for (let c = start; c <= end; c++) {
-    const v = String(gridCell(grid, row, colIdxToLetter(c)) ?? "");
+    const v = String(gridCell(grid, row, colToLetter(c)) ?? "");
     if (v === key) return c;
   }
   return 0;
@@ -76,18 +76,4 @@ function findLegHeightRow(grid: RawGrid, height: number, startRow: number, endRo
     if (v === height) return r;
   }
   return 0;
-}
-function colIdxFromLetter(letter: string): number {
-  let n = 0;
-  for (const ch of letter.toUpperCase()) n = n * 26 + (ch.charCodeAt(0) - 64);
-  return n;
-}
-function colIdxToLetter(col: number): string {
-  let s = "";
-  while (col > 0) {
-    const rem = (col - 1) % 26;
-    s = String.fromCharCode(65 + rem) + s;
-    col = Math.floor((col - 1) / 26);
-  }
-  return s;
 }

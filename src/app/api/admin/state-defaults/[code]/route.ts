@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAudit } from "@/lib/audit";
 import { requireAdmin } from "@/lib/admin-guard";
+import { VALID_STATES } from "@/lib/us-states";
 
 export async function PATCH(
   req: NextRequest,
@@ -11,6 +12,9 @@ export async function PATCH(
   if (!guard.ok) return guard.res;
 
   const { code } = await params;
+  if (!VALID_STATES.has(code)) {
+    return NextResponse.json({ error: "Invalid state code" }, { status: 400 });
+  }
   const body = await req.json();
   const update: Record<string, unknown> = {};
 

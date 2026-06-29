@@ -45,18 +45,7 @@ export function letterToCol(letter: string): number {
 }
 
 /**
- * MATCH-equivalent: find the 1-indexed position of `needle` in `haystack`.
- * Returns 0 if not found (caller should handle).
- */
-export function matchValue<T>(needle: T, haystack: readonly T[]): number {
-  for (let i = 0; i < haystack.length; i++) {
-    if (haystack[i] === needle) return i + 1;
-  }
-  return 0;
-}
-
-/**
- * MATCH with case-insensitive string matching.
+ * MATCH with case-insensitive string matching. Returns 1-indexed position, 0 if not found.
  */
 export function matchString(needle: string, haystack: readonly string[]): number {
   const n = needle.toLowerCase();
@@ -64,52 +53,4 @@ export function matchString(needle: string, haystack: readonly string[]): number
     if (haystack[i].toLowerCase() === n) return i + 1;
   }
   return 0;
-}
-
-/**
- * Read header row from a raw grid (row 1, cols startCol..endCol).
- */
-export function readHeaderRow(grid: RawGrid, startColLetter: string, endColLetter: string): string[] {
-  const start = letterToCol(startColLetter);
-  const end = letterToCol(endColLetter);
-  const headers: string[] = [];
-  for (let c = start; c <= end; c++) {
-    const v = gridCell(grid, 1, colToLetter(c));
-    headers.push(str(v));
-  }
-  return headers;
-}
-
-/**
- * Read first column values from a raw grid (col A, rows startRow..endRow).
- */
-export function readFirstColumn(grid: RawGrid, startRow: number, endRow: number, col = "A"): unknown[] {
-  const vals: unknown[] = [];
-  for (let r = startRow; r <= endRow; r++) {
-    vals.push(gridCell(grid, r, col));
-  }
-  return vals;
-}
-
-/**
- * Read a range as a 2D array. Returns rows[row][col] keyed by 0-based offset.
- */
-export function readRangeRows(
-  grid: RawGrid,
-  startRow: number,
-  endRow: number,
-  startColLetter: string,
-  endColLetter: string
-): unknown[][] {
-  const start = letterToCol(startColLetter);
-  const end = letterToCol(endColLetter);
-  const rows: unknown[][] = [];
-  for (let r = startRow; r <= endRow; r++) {
-    const row: unknown[] = [];
-    for (let c = start; c <= end; c++) {
-      row.push(gridCell(grid, r, colToLetter(c)));
-    }
-    rows.push(row);
-  }
-  return rows;
 }

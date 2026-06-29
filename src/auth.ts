@@ -5,8 +5,6 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { verifyLauncherSsoToken } from "@/lib/sso/verifier";
 import type { UserRole, Office } from "@/types/auth";
 
-const isDev = process.env.NODE_ENV === "development";
-
 const providers = [];
 
 if (process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET) {
@@ -50,59 +48,43 @@ providers.push(
   })
 );
 
+// Single-admin local credentials path — gated by ADMIN_PASSWORD env var with
+// a constant-time string compare. No dev-mode bypass; no email-only login.
 providers.push(
   Credentials({
     id: "credentials",
-    name: "Email & Password",
+    name: "Admin Password",
     credentials: {
       email: { label: "Email", type: "email" },
       password: { label: "Password", type: "password" },
     },
     async authorize(credentials) {
-      const email = credentials?.email as string;
-      const password = credentials?.password as string;
+      const email = typeof credentials?.email === "string" ? credentials.email : "";
+      const password = typeof credentials?.password === "string" ? credentials.password : "";
       if (!email || !password) return null;
 
       const adminPw = (process.env.ADMIN_PASSWORD || "").trim();
       if (
         email === "rex@bigbuildingsdirect.com" &&
         adminPw.length >= 8 &&
-        password === adminPw
+        constantTimeEqual(password, adminPw)
       ) {
         return { id: "admin-001", email, name: "Rex", image: null };
       }
-
-      if (isDev) {
-        return {
-          id: "dev-user-001",
-          email,
-          name: email.split("@")[0],
-          image: null,
-        };
-      }
-
-      try {
-        const supabase = createAdminClient();
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("id, email, name, role")
-          .eq("email", email)
-          .single();
-
-        if (!profile) return null;
-
-        return {
-          id: profile.id,
-          email: profile.email,
-          name: profile.name || null,
-          image: null,
-        };
-      } catch {
-        return null;
-      }
+      // Everyone else must authenticate via Google or the launcher SSO token —
+      // we don't accept profile-lookup-by-email-only here because there is no
+      // password column on `profiles` to verify against.
+      return null;
     },
   })
 );
+
+function constantTimeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   trustHost: true,
@@ -125,12 +107,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         if (user.email === "rex@bigbuildingsdirect.com" && user.id === "admin-001") {
           token.role = "admin" as UserRole;
           token.profileId = "admin-001";
-          return token;
-        }
-
-        if (isDev && user.id === "dev-user-001") {
-          token.role = "admin" as UserRole;
-          token.profileId = "dev-user-001";
           return token;
         }
 

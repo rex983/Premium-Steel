@@ -1,15 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-
-async function requireAdmin(): Promise<{ ok: true } | { ok: false; res: NextResponse }> {
-  const session = await auth();
-  const user = session?.user as { role?: string } | undefined;
-  if (!user || user.role !== "admin") {
-    return { ok: false, res: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
-  }
-  return { ok: true };
-}
+import { requireAdmin } from "@/lib/admin-guard";
 
 export async function GET(req: NextRequest) {
   const guard = await requireAdmin();

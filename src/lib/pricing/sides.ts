@@ -1,7 +1,7 @@
 import type { SidesMatrix } from "@/types/pricing";
 import type { BuildingConfig } from "./types";
 import { QTY_MULTIPLIER, ROOF_STYLE_CODE } from "./constants";
-import { gridCell, num, type RawGrid } from "./_helpers";
+import { gridCell, num, colToLetter, letterToCol, type RawGrid } from "./_helpers";
 
 /**
  * Pricing - Sides
@@ -34,7 +34,7 @@ export function calcSides(config: BuildingConfig, matrices: SidesMatrix & { raw?
   const rowIdx = findLegHeightRow(grid, config.height, 2, 20);
   if (rowIdx === 0) return 0;
 
-  const price = num(gridCell(grid, rowIdx, colIdxToLetter(colIdx)));
+  const price = num(gridCell(grid, rowIdx, colToLetter(colIdx)));
   return Math.round(price * QTY_MULTIPLIER(config.sidesQty));
 }
 
@@ -51,15 +51,15 @@ export function calcWainscotSide(
   const widthKey = `${config.length}-${orientation}`;
   const colIdx = findHeaderCol(grid, 36, widthKey, "H", "AQ");
   if (colIdx === 0) return 0;
-  const price = num(gridCell(grid, 37, colIdxToLetter(colIdx)));
+  const price = num(gridCell(grid, 37, colToLetter(colIdx)));
   return Math.round(price * QTY_MULTIPLIER(wainscotQty));
 }
 
 function findHeaderCol(grid: RawGrid, row: number, key: string, startCol: string, endCol: string): number {
-  const start = colIdxFromLetter(startCol);
-  const end = colIdxFromLetter(endCol);
+  const start = letterToCol(startCol);
+  const end = letterToCol(endCol);
   for (let c = start; c <= end; c++) {
-    const v = String(gridCell(grid, row, colIdxToLetter(c)) ?? "");
+    const v = String(gridCell(grid, row, colToLetter(c)) ?? "");
     if (v === key) return c;
   }
   return 0;
@@ -73,21 +73,4 @@ function findLegHeightRow(grid: RawGrid, height: number, startRow: number, endRo
     if (m && parseInt(m[1], 10) === height) return r;
   }
   return 0;
-}
-
-function colIdxFromLetter(letter: string): number {
-  let n = 0;
-  for (const ch of letter.toUpperCase()) {
-    n = n * 26 + (ch.charCodeAt(0) - 64);
-  }
-  return n;
-}
-function colIdxToLetter(col: number): string {
-  let s = "";
-  while (col > 0) {
-    const rem = (col - 1) % 26;
-    s = String.fromCharCode(65 + rem) + s;
-    col = Math.floor((col - 1) / 26);
-  }
-  return s;
 }

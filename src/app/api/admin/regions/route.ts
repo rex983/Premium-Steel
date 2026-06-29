@@ -2,13 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAudit } from "@/lib/audit";
 import { requireAdmin } from "@/lib/admin-guard";
-
-const VALID_STATES = new Set([
-  "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN",
-  "IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV",
-  "NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN",
-  "TX","UT","VT","VA","WA","WV","WI","WY",
-]);
+import { VALID_STATES } from "@/lib/us-states";
 
 /** GET — list all regions (active + inactive) with current pricing version + last upload */
 export async function GET() {

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
@@ -7,6 +8,8 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ regionId: string }> }
 ) {
+  const session = await auth();
+  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { regionId } = await params;
   if (!regionId.match(/^[0-9a-f-]{36}$/)) {
     return NextResponse.json({ error: "Invalid region id" }, { status: 400 });

@@ -13,7 +13,8 @@ export async function GET() {
     .select("state_code, region_id, default_snow_load, default_wind_mph")
     .order("state_code");
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("State defaults list error:", error.message);
+    return NextResponse.json({ error: "Failed to load state defaults" }, { status: 500 });
   }
   return NextResponse.json({ stateDefaults: data ?? [] });
 }

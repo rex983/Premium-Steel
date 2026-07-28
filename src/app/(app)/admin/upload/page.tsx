@@ -10,8 +10,10 @@ import { Label } from "@/components/ui/label";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { Upload as UploadIcon, CheckCircle2, AlertCircle, AlertTriangle } from "lucide-react";
 import { useRegions } from "@/hooks/use-regions";
+import { formatDate } from "@/lib/utils";
 
 type Status = "idle" | "uploading" | "success" | "error";
 
@@ -37,6 +39,17 @@ interface PricingStatusResponse {
   regions: PricingStatusRow[];
 }
 
+interface UploadHistoryRow {
+  id: string;
+  regionName: string;
+  uploader: string | null;
+  filename: string;
+  sheetCount: number | null;
+  status: "processing" | "success" | "failed";
+  errorMessage: string | null;
+  createdAt: string;
+}
+
 export default function UploadPage() {
   const { regions, loading, error: regionsError } = useRegions();
   const [regionId, setRegionId] = useState<string>("");
@@ -44,6 +57,7 @@ export default function UploadPage() {
   const [status, setStatus] = useState<Status>("idle");
   const [response, setResponse] = useState<UploadResponse | null>(null);
   const [pricingStatus, setPricingStatus] = useState<PricingStatusResponse | null>(null);
+  const [history, setHistory] = useState<UploadHistoryRow[] | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -55,6 +69,10 @@ export default function UploadPage() {
       .then((r) => r.json())
       .then((data: PricingStatusResponse) => setPricingStatus(data))
       .catch(() => {});
+    fetch("/api/admin/uploads")
+      .then((r) => r.json())
+      .then((data: { uploads: UploadHistoryRow[] }) => setHistory(data.uploads ?? []))
+      .catch(() => setHistory([]));
   }, [response]);
 
   const staleRegions = pricingStatus?.regions.filter((r) => r.stale) ?? [];
@@ -212,7 +230,57 @@ export default function UploadPage() {
             </CardContent>
           </Card>
         )}
+
+        <Card>
+          <CardHeader>
+            <h3 className="font-semibold">Upload History</h3>
+            <p className="text-xs text-muted-foreground">
+              Last 25 uploads across all regions.
+            </p>
+          </CardHeader>
+          <CardContent>
+            {history === null ? (
+              <div className="text-sm text-muted-foreground">Loading…</div>
+            ) : history.length === 0 ? (
+              <div className="text-sm text-muted-foreground">No uploads yet.</div>
+            ) : (
+              <div className="divide-y text-sm">
+                {history.map((u) => (
+                  <div key={u.id} className="py-2 flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1 space-y-0.5">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{u.regionName}</span>
+                        <UploadStatusBadge status={u.status} />
+                        {u.sheetCount != null && (
+                          <span className="text-xs text-muted-foreground">{u.sheetCount} sheets</span>
+                        )}
+                      </div>
+                      <div className="text-xs text-muted-foreground truncate">
+                        {u.filename}
+                        {u.uploader && ` · ${u.uploader}`}
+                      </div>
+                      {u.errorMessage && (
+                        <div className="text-xs text-destructive whitespace-pre-wrap break-words">
+                          {u.errorMessage}
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-xs text-muted-foreground whitespace-nowrap">
+                      {formatDate(u.createdAt)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </main>
     </>
   );
+}
+
+function UploadStatusBadge({ status }: { status: UploadHistoryRow["status"] }) {
+  if (status === "success") return <Badge variant="default">success</Badge>;
+  if (status === "failed") return <Badge variant="destructive">failed</Badge>;
+  return <Badge variant="secondary">processing</Badge>;
 }

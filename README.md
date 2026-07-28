@@ -18,6 +18,29 @@ npm run dev
 Supabase migration lives at `supabase/migrations/`. Apply via Supabase CLI or
 push to the shared project (`xockuiyvxijuzlwlsfbu`).
 
+## Tests
+
+```sh
+npm test         # runs the golden-case engine check against sample workbooks
+```
+
+The engine test loads `IN OH KY IL TN WV MO 1_26_26.xlsx` and
+`MI WI PA MN 1_26_26.xlsx` from `C:/Users/Redir/Downloads/` and asserts
+priced outputs against the workbooks' cached totals. Missing reference files
+are reported as SKIPPED (no failure). Assertions marked `knownGaps` (deferred
+Phase-3b RUD adder + labor line) are reported as XFAIL and don't fail the run.
+
+## Deploy checklist
+
+1. Deploy to Vercel — envs from `.env.example` (fill `SUPABASE_SERVICE_ROLE_KEY`,
+   `AUTH_SECRET`, `AUTH_GOOGLE_ID/SECRET`, `AUTH_URL` → prod URL).
+2. Verify the deployed URL matches the one embedded in
+   `supabase/launcher-integration.sql` (currently `premium-steel-umber.vercel.app`).
+   Update the SQL if it differs.
+3. Apply `supabase/launcher-integration.sql` against the shared Supabase project.
+4. Confirm the tile appears in BBD Launcher for admin role.
+
 ## Status
 
-Phase 1 (scaffolding) complete — 2026-05-01. See [CLAUDE.md](CLAUDE.md) for full plan.
+Phases 1–7 complete. See [CLAUDE.md](CLAUDE.md) for the full plan and deferred
+Phase-3b engine gaps (RUD adders, 12g leg-height adjustment).

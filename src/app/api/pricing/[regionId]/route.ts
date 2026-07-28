@@ -30,7 +30,8 @@ export async function GET(
   const { data, error } = await q.maybeSingle();
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("Pricing fetch error:", error.message);
+    return NextResponse.json({ error: "Failed to load pricing" }, { status: 500 });
   }
   if (!data) {
     return NextResponse.json({ pricing: null });

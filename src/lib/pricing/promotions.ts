@@ -1,19 +1,22 @@
 import type { PromotionsMatrix } from "@/types/pricing";
 
 /**
- * Promotions — match a tier by name (which is what the user picks in the dropdown).
- * Returns the discount as a NEGATIVE number (Promotions!C10 = -E1 × B10).
+ * Promotions — pick a tier by name (dropdown selection), apply its % to the
+ * line-item subtotal. Returned as NEGATIVE (Promotions!C8 = -E1 × B8).
  *
- * E1 (in spreadsheet) = SUM(R24:U52) + R55 = the line-item subtotal.
- * B10 = the chosen tier's pct.
+ * Special case: tiers flagged isManual (e.g. "Manual Discount") take their pct
+ * from config.manualDiscount instead of the parsed tier value.
  */
 export function calcPromoDiscount(
   tierLabel: string | undefined,
   matrices: PromotionsMatrix,
-  lineItemSubtotal: number
+  lineItemSubtotal: number,
+  manualDiscount?: number,
 ): number {
   if (!tierLabel || tierLabel === "No Promotional Sale") return 0;
   const tier = matrices.tiers.find((t) => t.label === tierLabel);
   if (!tier) return 0;
-  return -Math.round(lineItemSubtotal * tier.pct * 100) / 100;
+  const pct = tier.isManual ? (manualDiscount ?? 0) : tier.pct;
+  if (!pct) return 0;
+  return -Math.round(lineItemSubtotal * pct * 100) / 100;
 }

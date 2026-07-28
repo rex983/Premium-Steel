@@ -161,6 +161,68 @@ async function main() {
     }
   }
 
+  // ==========================================================================
+  // Smoke tests: new 07-26 workbooks must parse cleanly, price without throwing,
+  // and expose "Manual Discount" as a promo tier flagged isManual.
+  // ==========================================================================
+  const NEW_FILES = {
+    "south-new": "C:/Users/Redir/Downloads/PSB -TX, IN, OH, KY, IL, TN, WV, -07-26.xlsx",
+    "north-new": "C:/Users/Redir/Downloads/PSB - 01-26 -MI, WI, PA -07-26.xlsx",
+  };
+  const smokeSample = SAMPLES.south.config; // reuse for both regions — engine should not throw
+  for (const [label, path] of Object.entries(NEW_FILES)) {
+    if (!existsSync(path)) {
+      console.log(`\n[${label}] SKIPPED — ${path} not found`);
+      missingFiles++;
+      continue;
+    }
+    console.log(`\n=== ${label} SMOKE (${path.split(/[\\/]/).pop()}) ===`);
+    const buf = readFileSync(path);
+    const parsed = parserMod.parsePsbWorkbook(buf, path.split(/[\\/]/).pop());
+    if (!parsed.validation.ok) {
+      console.log("  FAIL parser validation:", parsed.validation.errors);
+      failures++;
+      continue;
+    }
+    // Promo tier shape check
+    const manual = parsed.matrices.promotions.tiers.find((t) => t.label === "Manual Discount");
+    if (!manual) {
+      console.log("  FAIL: no 'Manual Discount' tier parsed");
+      failures++;
+    } else if (!manual.isManual) {
+      console.log("  FAIL: 'Manual Discount' tier missing isManual flag");
+      failures++;
+    } else {
+      console.log("  PASS: Manual Discount tier flagged isManual");
+    }
+    // Engine smoke — must not throw
+    try {
+      const smoke = engineMod.priceBuilding(smokeSample, parsed.matrices);
+      console.log(`  PASS: engine ran — total = ${fmt(smoke.totals.total)}`);
+    } catch (e) {
+      console.log(`  FAIL: engine threw — ${e.message}`);
+      failures++;
+    }
+    // Manual Discount honored
+    const withManual = { ...smokeSample, promoTier: "Manual Discount", manualDiscount: 0.10 };
+    try {
+      const noPromo = engineMod.priceBuilding({ ...smokeSample, promoTier: "No Promotional Sale" }, parsed.matrices);
+      const withPromo = engineMod.priceBuilding(withManual, parsed.matrices);
+      const gap = noPromo.totals.totalTaxableSale - withPromo.totals.totalTaxableSale;
+      const expectedGap = noPromo.totals.totalTaxableSale * 0.10; // 10% off pre-promo line sum
+      // We can't check exact expectedGap without recomputing lineSum, but assert non-zero + positive
+      if (gap > 0) {
+        console.log(`  PASS: Manual Discount 10% reduced taxable by ${fmt(gap)}`);
+      } else {
+        console.log(`  FAIL: Manual Discount had no effect (gap=${fmt(gap)})`);
+        failures++;
+      }
+    } catch (e) {
+      console.log(`  FAIL: manual-discount engine run threw — ${e.message}`);
+      failures++;
+    }
+  }
+
   console.log("");
   if (missingFiles > 0) {
     console.log(`SKIPPED — ${missingFiles} reference workbook(s) not found on this machine.`);

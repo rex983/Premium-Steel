@@ -2,12 +2,20 @@ import type { WorkBook } from "xlsx";
 import { getCell, findSheet } from "./sheet-readers/utils";
 import type { Region } from "@/types/pricing";
 
+// Detection accepts old and new region membership so re-uploads of prior
+// workbook versions still classify correctly.
 const SOUTH_STATE_NAMES = new Set([
-  "Indiana", "Ohio", "Illinois", "Kentucky", "Tennessee", "Missouri", "West Virginia", "West Virgina",
+  "Indiana", "Ohio", "Illinois", "Kentucky", "Tennessee", "West Virginia", "West Virgina",
+  "Texas", // added 2026-07-26 batch
+  "Missouri", // removed 2026-07-26 batch but retained for legacy uploads
 ]);
 const NORTH_STATE_NAMES = new Set([
-  "Michigan", "Wisconsin", "Pennsylvania", "Minnesota",
+  "Michigan", "Wisconsin", "Pennsylvania",
+  "Minnesota", // removed 2026-07-26 batch but retained for legacy uploads
 ]);
+
+const SOUTH_STATE_CODES = ["IN", "OH", "KY", "IL", "TN", "WV", "TX", "MO"];
+const NORTH_STATE_CODES = ["MI", "WI", "PA", "MN"];
 
 const VALID_STATES = new Set([
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN",
@@ -41,12 +49,15 @@ export function detectRegion(workbook: WorkBook, filename?: string): RegionDetec
   const filenameStates = filename ? extractStatesFromFilename(filename) : [];
   let regionFromFile: Region | null = null;
   if (filenameStates.length > 0) {
-    const first = filenameStates[0];
-    if (["MI", "WI", "PA", "MN"].includes(first)) {
-      regionFromFile = "north";
-    } else if (["IN", "OH", "KY", "IL", "TN", "MO", "WV"].includes(first)) {
-      regionFromFile = "south";
+    // Pick region by majority of matched states (handles new "TX, IN, OH…" format
+    // where the first token might be a state not in the historical region set).
+    let southHits = 0, northHits = 0;
+    for (const s of filenameStates) {
+      if (SOUTH_STATE_CODES.includes(s)) southHits++;
+      if (NORTH_STATE_CODES.includes(s)) northHits++;
     }
+    if (southHits > northHits) regionFromFile = "south";
+    else if (northHits > southHits) regionFromFile = "north";
     reasons.push(`filename states = ${JSON.stringify(filenameStates)}`);
   }
 
@@ -67,8 +78,8 @@ export function detectRegion(workbook: WorkBook, filename?: string): RegionDetec
   let regionFromSnow: Region | null = null;
   if (snowChangers) {
     const d74 = String(getCell(snowChangers, "D74") ?? "").toUpperCase();
-    if (["IN", "OH", "KY", "IL", "TN", "MO", "WV"].includes(d74)) regionFromSnow = "south";
-    if (["MI", "WI", "PA", "MN"].includes(d74)) regionFromSnow = "north";
+    if (SOUTH_STATE_CODES.includes(d74)) regionFromSnow = "south";
+    if (NORTH_STATE_CODES.includes(d74)) regionFromSnow = "north";
     if (d74) reasons.push(`Snow - Changers D74 = "${d74}"`);
   }
 
@@ -103,18 +114,20 @@ export function detectRegion(workbook: WorkBook, filename?: string): RegionDetec
 }
 
 function extractStatesFromFilename(filename: string): string[] {
+  // Handles both the old format
+  //   "IN OH KY IL TN WV MO 1_26_26.xlsx"          (space/underscore-separated)
+  // and the new 07-26 format
+  //   "PSB -TX, IN, OH, KY, IL, TN, WV, -07-26.xlsx" (comma-separated with dashes)
   const name = filename.replace(/\.[^.]+$/, "");
+  const parts = name.split(/[-\s_,]+/);
   const states: string[] = [];
-  const parts = name.split(/[-\s_]+/);
   for (const part of parts) {
-    if (VALID_STATES.has(part)) {
-      states.push(part);
-    } else if (states.length > 0) {
-      // Allow gap — but the filenames in spec are space-separated state codes followed by date
-      // e.g. "IN OH KY IL TN WV MO 1_26_26.xlsx"
-      const num = parseInt(part, 10);
-      if (!isNaN(num)) break;
+    const up = part.toUpperCase();
+    if (VALID_STATES.has(up)) {
+      if (!states.includes(up)) states.push(up);
     }
+    // Don't `break` on numerics — new filenames have "07-26" between state codes
+    // and the date isn't a stop signal since dashes already split tokens.
   }
   return states;
 }

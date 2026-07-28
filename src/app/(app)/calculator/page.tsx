@@ -18,7 +18,7 @@ export default function CalculatorPage() {
   const [regionId, setRegionId] = useState<string | null>(null);
   const [stateCode, setStateCode] = useState<string>("");
   const [taxPct, setTaxPct] = useState<number>(0);
-  const [depositPct, setDepositPct] = useState<number>(0.2);
+  const [depositPct, setDepositPct] = useState<number>(0.10);
   const { pricing, loading: pricingLoading, error: pricingError } = usePricing(regionId);
 
   // Auto-pick first region once regions load
@@ -85,7 +85,7 @@ export default function CalculatorPage() {
                 {(depositPct * 100).toFixed(0)}%
               </p>
               <p className="text-[10px] text-muted-foreground leading-tight">
-                Auto-tiered: 20% under $30,000 · 22% at $30,000+
+                Default 10% (spreadsheet default). Editable per quote.
               </p>
             </div>
             {pricing && (
@@ -136,7 +136,7 @@ function ErrorBox({ msg, hint }: { msg: string; hint?: string }) {
 function stateLabel(code: string): string {
   const map: Record<string, string> = {
     IN: "Indiana", OH: "Ohio", IL: "Illinois", KY: "Kentucky", TN: "Tennessee",
-    MO: "Missouri", WV: "West Virginia",
+    MO: "Missouri", WV: "West Virginia", TX: "Texas",
     MI: "Michigan", WI: "Wisconsin", PA: "Pennsylvania", MN: "Minnesota",
   };
   return map[code] ?? code;

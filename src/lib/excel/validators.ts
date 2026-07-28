@@ -43,8 +43,10 @@ export function validateMatrices(m: PSBPricingMatrices): ValidationResult {
       `Pricing - Base: only ${Object.keys(m.base.prices).length} prices — expected hundreds`
     );
   }
-  if (m.promotions.tiers.length < 5) {
-    warnings.push(`Promotions: ${m.promotions.tiers.length} tiers (expected 6)`);
+  // Old workbook had 5 subtotal-tiered sales + "No Promo" (6 rows).
+  // New (07-26) workbook has 2 fixed promos + "No Promo" + "Manual Discount" (4 rows).
+  if (m.promotions.tiers.length < 3) {
+    warnings.push(`Promotions: only ${m.promotions.tiers.length} tiers parsed (expected 3+)`);
   }
   if (m.snow.changers.snowLoads.length === 0) {
     errors.push("Snow - Changers: no snow load options parsed");

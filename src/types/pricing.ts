@@ -188,13 +188,18 @@ export interface LaborEquipmentMatrix {
 }
 
 // =============================================================================
-// Promotions (5%, 10%, 15%, 20%, 25%, none) keyed by subtotal range
+// Promotions — labeled tiers user picks from the promo dropdown.
+// Old workbook: 5 subtotal-tiered winter sales + "No Promo".
+// New workbook (07-26): 2 fixed promos + "No Promo" + "Manual Discount" (user pct).
 // =============================================================================
 export interface PromotionTier {
   label: string;
-  pct: number;     // 0.05, 0.10, etc.
+  /** Static % from spreadsheet. Ignored (must be user-supplied) when isManual. */
+  pct: number;
   minSubtotal: number;
   maxSubtotal: number | null;
+  /** True when the tier's pct is driven by a user-entered cell (e.g. "Manual Discount"). */
+  isManual?: boolean;
 }
 export interface PromotionsMatrix {
   tiers: PromotionTier[];

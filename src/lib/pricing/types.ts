@@ -92,6 +92,8 @@ export interface BuildingConfig {
 
   // Promo + tax + deposit (all user-editable on the quote sheet).
   promoTier?: string;             // W24 — "No Promotional Sale" if absent
+  /** Only consumed when promoTier is a tier flagged isManual (e.g. "Manual Discount"). */
+  manualDiscount?: number;        // AB24 — user-entered % as a decimal (0.10 = 10% off)
   taxPct?: number;                // AA28 — default 0.07
   depositPct?: number;            // AB42 — default 0.10 (spreadsheet default)
   additionalDepositPct?: number;  // AB44 — 25% special-order surcharge, default 0

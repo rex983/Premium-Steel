@@ -106,7 +106,12 @@ export function priceBuilding(
 
   // Promo (R24:U52 + R55 sum × tier pct)
   const lineSum = lineItems.reduce((s, li) => s + li.price, 0);
-  const promoDiscount = calcPromoDiscount(config.promoTier, matrices.promotions, lineSum + engineering.totalEngineering);
+  const promoDiscount = calcPromoDiscount(
+    config.promoTier,
+    matrices.promotions,
+    lineSum + engineering.totalEngineering,
+    config.manualDiscount,
+  );
 
   // Equipment / additional labor (added in totals, not as line items).
   // "T" states scale labor by the taxable-sale base, so compute that first.

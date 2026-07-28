@@ -108,8 +108,11 @@ export function priceBuilding(
   const lineSum = lineItems.reduce((s, li) => s + li.price, 0);
   const promoDiscount = calcPromoDiscount(config.promoTier, matrices.promotions, lineSum + engineering.totalEngineering);
 
-  // Equipment / additional labor (added in totals, not as line items)
-  const equipmentLabor = calcEquipmentLabor(config, matrices.laborEquipment);
+  // Equipment / additional labor (added in totals, not as line items).
+  // "T" states scale labor by the taxable-sale base, so compute that first.
+  const preLaborTaxable = lineItems.reduce((s, li) => s + li.price, 0) +
+    engineering.totalEngineering + promoDiscount;
+  const equipmentLabor = calcEquipmentLabor(config, matrices.laborEquipment, preLaborTaxable);
   const additionalLabor = labor[0] + labor[1];
 
   // Plans / Calcs (display only)
@@ -124,7 +127,9 @@ export function priceBuilding(
     equipmentLabor,
     additionalLabor,
     plansCost,
-    calcsCost
+    calcsCost,
+    config.depositPct,
+    config.additionalDepositPct,
   );
 
   return {

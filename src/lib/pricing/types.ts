@@ -90,9 +90,11 @@ export interface BuildingConfig {
   // Customer / location (drives region)
   state: string;          // Z10 — drives state-defaults (snow load + wind defaults)
 
-  // Promo + tax (configurable). Deposit % is auto-tiered from total — see totals.ts.
-  promoTier?: string;     // W24 — "No Promotional Sale" if absent
-  taxPct?: number;        // AA28 — default 0.07
+  // Promo + tax + deposit (all user-editable on the quote sheet).
+  promoTier?: string;             // W24 — "No Promotional Sale" if absent
+  taxPct?: number;                // AA28 — default 0.07
+  depositPct?: number;            // AB42 — default 0.10 (spreadsheet default)
+  additionalDepositPct?: number;  // AB44 — 25% special-order surcharge, default 0
 }
 
 export interface LineItem {
@@ -111,8 +113,9 @@ export interface EngineTotals {
   equipmentLabor: number;    // AC36 — Pricing - Labor-EQ!N29
   additionalLabor: number;   // AC38 = R53 + R54
   total: number;             // AC40 = AC30 + AC36 + AC38 + AC34 + AC32 + AC39
-  depositPct: number;        // auto-tiered: <30k = 0.20, >=30k = 0.22
+  depositPct: number;        // AB42 — user-editable, default 0.10
   depositAmount: number;     // AC42 = AC26 × depositPct
+  additionalDepositAmount: number; // AC44 = AC26 × additionalDepositPct (special orders)
   balanceDue: number;        // AC46 = AC40 - (AC42 + AC44)
   // Display-only (NOT in balance)
   plansCost: number;         // AC50

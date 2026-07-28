@@ -27,8 +27,7 @@ npm test         # runs the golden-case engine check against sample workbooks
 The engine test loads `IN OH KY IL TN WV MO 1_26_26.xlsx` and
 `MI WI PA MN 1_26_26.xlsx` from `C:/Users/Redir/Downloads/` and asserts
 priced outputs against the workbooks' cached totals. Missing reference files
-are reported as SKIPPED (no failure). Assertions marked `knownGaps` (deferred
-Phase-3b RUD adder + labor line) are reported as XFAIL and don't fail the run.
+are reported as SKIPPED. All 7 south assertions currently PASS within $1.
 
 ## Deploy checklist
 
@@ -42,5 +41,6 @@ Phase-3b RUD adder + labor line) are reported as XFAIL and don't fail the run.
 
 ## Status
 
-Phases 1–7 complete. See [CLAUDE.md](CLAUDE.md) for the full plan and deferred
-Phase-3b engine gaps (RUD adders, 12g leg-height adjustment).
+Phases 1–7 complete. Phase-3b engine gaps closed 2026-07-28 (deposit + equipment/labor formulas
+wired; RUD adders were already correct; "12g leg-height adjustment" was a false-alarm TODO).
+See [CLAUDE.md](CLAUDE.md) for the full plan.

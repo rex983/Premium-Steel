@@ -164,9 +164,27 @@ export interface InsulationMatrix {
 // =============================================================================
 // Pricing - Labor-EQ
 // =============================================================================
+/**
+ * State/width category lookup used by Labor-EQ N29:
+ *   C42 = INDEX(categoryMatrix, MATCH(height, heights), MATCH(width, widths))
+ *   N29 = IFS(C42="S", 0, C42="T", taxableSale * rate, C42="ET", rate)
+ * where `rate` = INDEX(rateMatrix, MATCH(length, lengths), MATCH(width+cat, rateHeaders))
+ */
 export interface LaborEquipmentMatrix {
   laborOptions: AccessoryItem[];
   equipmentOptions: AccessoryItem[];
+  /** Widths (col headers of category matrix), e.g. [12,18,20,22,24,26,28,30] */
+  widths?: number[];
+  /** Heights (row headers of category matrix), e.g. [6..20] */
+  heights?: number[];
+  /** categoryMatrix[heightIdx][widthIdx] = "S" | "T" | "ET" */
+  categoryMatrix?: ("S" | "T" | "ET")[][];
+  /** Lengths (row headers of rate matrix), e.g. [20,25,30,...,100] */
+  lengths?: number[];
+  /** Rate matrix col headers, e.g. ["12S","18S",...,"30ET"] (24 entries) */
+  rateHeaders?: string[];
+  /** rateMatrix[lengthIdx][rateHeaderIdx] = rate (percent for "T", flat $ for "ET") */
+  rateMatrix?: number[][];
 }
 
 // =============================================================================

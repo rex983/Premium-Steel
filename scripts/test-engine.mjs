@@ -39,7 +39,7 @@ const SAMPLES = {
       sides: "Fully Enclosed", ends: "Enclosed Ends",
       sidesPanel: "Vertical", endsPanel: "Vertical",
       sidesQty: 2, endsQty: 2,
-      rollUpDoors: [{ size: "10x10", qty: 2, position: "SIDE" }],
+      rollUpDoors: [{ size: "10x10", qty: 2, position: "SIDE", headerSeal: "Header Seal only Option" }],
       walkInDoors: [], windows: [],
       anchorType: "Concrete", windWarranty: "105 MPH Wind Warranty",
       insulation: '2" Fiberglass Insulation', insulationType: "Fully Insulated-Vertical",
@@ -59,9 +59,6 @@ const SAMPLES = {
       calcsCost: 695,
       engineering: 4371.5,
     },
-    // Known Phase-3b gaps: RUD adders + a ~$2000 labor/adder line item missing from totals.
-    // Failures on these fields are reported but don't fail the run until Phase-3b lands.
-    knownGaps: ["totalTaxableSale", "subtotal", "total", "balanceDue"],
   },
   north: {
     config: {

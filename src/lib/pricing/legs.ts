@@ -14,9 +14,9 @@ import { gridCell, num, colToLetter, letterToCol, type RawGrid } from "./_helper
  *   F22 = MATCH(legHeight, A2:A17)
  *   D22 = MATCH(length, B1:S1)   ← length is the column key, not width
  *
- * Note: spreadsheet applies gauge adjustment to legHeight via Pricing-Changers
- * before this lookup (B41 "Changed Legs"). 12G adds 3 to the height (15→18).
- * For phase-3 first cut we use the raw legHeight; refine when 12g case is needed.
+ * The Pricing-Changers B41/B50 "Changed Legs" transform is a low-height clamp only
+ * (0-3→3, 4-5→6, 6+→self) — no gauge dependency. Pricing-Legs has no gauge
+ * dimension either; 12g/14g gauge effect lives entirely in Pricing-Base.
  */
 export function calcLegs(config: BuildingConfig, matrices: LegsMatrix & { raw?: RawGrid }): number {
   const grid = matrices.raw;

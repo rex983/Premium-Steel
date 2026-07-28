@@ -93,7 +93,10 @@ src/
 
 1. **Phase 1** — Scaffolding (DONE — 2026-05-01)
 2. **Phase 2** — Excel parser per sheet (DONE)
-3. **Phase 3** — Pricing engine + snow engineering pipeline (DONE; engineering matches within $1; RUD adders + 12g leg-height adjustment are deferred Phase-3b TODOs)
+3. **Phase 3** — Pricing engine + snow engineering pipeline (DONE; engineering matches within $1)
+   - Phase-3b (2026-07-28): deposit + equipment/labor formulas wired; RUD adders were already correct
+     (the old test sample was stale); "12g leg-height adjustment" was a false-alarm TODO — Pricing - Legs
+     has no gauge dimension in the actual workbook, 12g affects Base only.
 4. **Phase 4** — Calculator UI (DONE)
 5. **Phase 5** — Quotes CRUD + PDF (DONE)
 6. **Phase 6** — Admin + Launcher integration (DONE)

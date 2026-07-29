@@ -38,10 +38,14 @@ npm run test:all # all three, in order
   snow load, all 4 promo tiers, Manual Discount, additional deposit, and edge
   cases. Enforces invariants (no NaN, deposit/tax math, monotonicity).
 - **`npm run parity`** iterates every valid cell in the 07-26 workbooks'
-  lookup matrices (base × gauge × width × length, legs, roof style, walk-ins,
-  windows, roll-ups × position × seal, plans, calcs, leg surcharge, door
-  surcharge, sides V/HZ, ends V/HZ × FE/G) and asserts penny-perfect equality
-  with the engine's line-item output — ~5,000 assertions per full run.
+  lookup matrices across 30 categories: base × gauge × width × length, legs,
+  roof style, walk-ins, windows, roll-ups × position × seal, plans, calcs,
+  leg surcharge, door surcharge, sides V/HZ, ends V/HZ × FE/G, base trim,
+  foam closure, sheet metal, J-trim, extras, labor fees, frame outs, wainscot
+  end/side, roof pitch, overhang, 26ga upgrade, premium colors, color screws,
+  gutter, insulation, anchors (both Anchors-Only + 105 MPH auto-count modes)
+  — ~6,500 assertions per full run, all penny-perfect. Snow engineering is
+  covered separately by the golden case in `npm test` + monotonicity in `smoke`.
 
 ## Deploy checklist
 

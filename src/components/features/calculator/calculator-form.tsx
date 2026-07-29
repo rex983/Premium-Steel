@@ -19,6 +19,7 @@ import { ChevronDown, Eye } from "lucide-react";
 import {
   GAUGE_OPTIONS, ROOF_STYLES, SIDE_OPTIONS, END_OPTIONS,
   PANEL_ORIENTATIONS, PITCH_OPTIONS, SNOW_LOAD_OPTIONS,
+  WIDTH_OPTIONS, LENGTH_OPTIONS, HEIGHT_OPTIONS, SIDES_TO_QTY,
 } from "@/lib/pricing/constants";
 
 const NONE = "__none__";
@@ -221,9 +222,48 @@ export function CalculatorForm({
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div className="lg:col-span-2 space-y-4">
         <Section title="Building Geometry" contentClassName="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {numField("width", "Width (ft)")}
-          {numField("length", "Length (ft)")}
-          {numField("height", "Leg Height (ft)")}
+          <div className="space-y-1">
+            <Label className="text-xs">Width (ft)</Label>
+            <Select
+              value={String(config.width)}
+              onValueChange={(v) => update("width", Number(v))}
+            >
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {WIDTH_OPTIONS.map((w) => (
+                  <SelectItem key={w} value={String(w)}>{w}&apos;</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Length (ft)</Label>
+            <Select
+              value={String(config.length)}
+              onValueChange={(v) => update("length", Number(v))}
+            >
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {LENGTH_OPTIONS.map((l) => (
+                  <SelectItem key={l} value={String(l)}>{l}&apos;</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Leg Height (ft)</Label>
+            <Select
+              value={String(config.height)}
+              onValueChange={(v) => update("height", Number(v))}
+            >
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {HEIGHT_OPTIONS.map((h) => (
+                  <SelectItem key={h} value={String(h)}>{h}&apos;</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           {selectField("gauge", "Gauge", GAUGE_OPTIONS)}
           {selectField("roofStyle", "Roof Style", ROOF_STYLES)}
           <div className="space-y-1">
@@ -260,7 +300,25 @@ export function CalculatorForm({
         </Section>
 
         <Section title="Walls" contentClassName="grid grid-cols-2 md:grid-cols-3 gap-3">
-            {selectField("sides", "Sides", SIDE_OPTIONS)}
+            <div className="space-y-1">
+              <Label className="text-xs">Sides</Label>
+              <Select
+                value={config.sides}
+                onValueChange={(v) => {
+                  // Auto-couple sidesQty so "Open" doesn't accidentally price as
+                  // fully enclosed if the user forgets to also flip qty to 0.
+                  const qty = SIDES_TO_QTY[v] ?? config.sidesQty;
+                  setConfig((prev) => ({ ...prev, sides: v, sidesQty: qty }));
+                }}
+              >
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {SIDE_OPTIONS.map((o) => (
+                    <SelectItem key={o} value={o}>{o}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             {selectField("sidesPanel", "Sides Panel", PANEL_ORIENTATIONS)}
             <div className="space-y-1">
               <Label className="text-xs">Sides Qty</Label>

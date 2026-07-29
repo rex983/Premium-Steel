@@ -17,6 +17,23 @@ export const SIDE_OPTIONS = [
   "Open",
 ] as const;
 
+/**
+ * How the "Sides" dropdown maps to the numeric sidesQty engine reads.
+ * Fully Enclosed → both sides walled (2), Partial → one (1), Open → none (0).
+ */
+export const SIDES_TO_QTY: Record<string, 0 | 1 | 2> = {
+  "Fully Enclosed": 2,
+  "Partial Sides": 1,
+  "Open": 0,
+};
+
+/** Widths supported by every workbook lookup table. */
+export const WIDTH_OPTIONS = [12, 18, 20, 22, 24, 26, 28, 30] as const;
+/** Lengths supported (5' increments from 20 to 100). */
+export const LENGTH_OPTIONS = [20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100] as const;
+/** Leg heights supported (6' to 20'). Low heights clamp via Pricing-Changers B41/B50. */
+export const HEIGHT_OPTIONS = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] as const;
+
 export const END_OPTIONS = ["Gable", "Enclosed Ends", "Extended Gable"] as const;
 
 export const PANEL_ORIENTATIONS = ["Vertical", "Horizontal"] as const;

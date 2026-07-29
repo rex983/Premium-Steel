@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import type { BuildingConfig } from "@/lib/pricing/types";
 import type { PSBPricingMatrices } from "@/types/pricing";
 import { priceBuilding } from "@/lib/pricing/engine";
@@ -60,7 +60,14 @@ export interface CalculatorFormProps {
   regionId: string;
   defaultState?: string;
   taxPct?: number;
-  onDepositPctChange?: (pct: number) => void;
+  /** User-picked promo tier label; overrides config.promoTier when provided. */
+  promoTier?: string;
+  /** Manual-discount % (0-1). Only consumed when promoTier is flagged isManual. */
+  manualDiscount?: number;
+  /** Deposit %. Overrides config.depositPct when provided. */
+  depositPct?: number;
+  /** Additional 25% deposit for special orders. Overrides config value when provided. */
+  additionalDepositPct?: number;
 }
 
 const defaultConfig = (m: PSBPricingMatrices, state?: string): BuildingConfig => ({
@@ -98,19 +105,26 @@ export function CalculatorForm({
   regionId,
   defaultState,
   taxPct,
-  onDepositPctChange,
+  promoTier,
+  manualDiscount,
+  depositPct,
+  additionalDepositPct,
 }: CalculatorFormProps) {
   const [config, setConfig] = useState<BuildingConfig>(() =>
     defaultConfig(matrices, defaultState)
   );
 
   const result = useMemo(
-    () => priceBuilding({ ...config, taxPct: taxPct ?? config.taxPct ?? 0 }, matrices),
-    [config, taxPct, matrices]
+    () => priceBuilding({
+      ...config,
+      taxPct: taxPct ?? config.taxPct ?? 0,
+      promoTier: promoTier ?? config.promoTier,
+      manualDiscount: manualDiscount ?? config.manualDiscount,
+      depositPct: depositPct ?? config.depositPct,
+      additionalDepositPct: additionalDepositPct ?? config.additionalDepositPct,
+    }, matrices),
+    [config, taxPct, promoTier, manualDiscount, depositPct, additionalDepositPct, matrices]
   );
-  useEffect(() => {
-    onDepositPctChange?.(result.totals.depositPct);
-  }, [result.totals.depositPct, onDepositPctChange]);
 
   const [previewing, setPreviewing] = useState(false);
 

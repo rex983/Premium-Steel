@@ -11,6 +11,12 @@ import { StatePicker } from "@/components/features/calculator/state-picker";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+
+const ADDITIONAL_DEPOSIT_PCT = 0.25; // AB44 special-order surcharge
 
 export default function CalculatorPage() {
   const { regions, loading: regionsLoading, error: regionsError } = useRegions();
@@ -19,6 +25,9 @@ export default function CalculatorPage() {
   const [stateCode, setStateCode] = useState<string>("");
   const [taxPct, setTaxPct] = useState<number>(0);
   const [depositPct, setDepositPct] = useState<number>(0.10);
+  const [promoTier, setPromoTier] = useState<string>("No Promotional Sale");
+  const [manualDiscount, setManualDiscount] = useState<number>(0);
+  const [addlDepositActive, setAddlDepositActive] = useState<boolean>(false);
   const { pricing, loading: pricingLoading, error: pricingError } = usePricing(regionId);
 
   // Auto-pick first region once regions load
@@ -48,6 +57,22 @@ export default function CalculatorPage() {
   }, [regionId, visibleStateDefaults, stateCode]);
 
   const stateDefault = stateDefaults.find((s) => s.state_code === stateCode);
+
+  const promoTiers = pricing?.matrices?.promotions?.tiers ?? [];
+  const selectedTier = promoTiers.find((t) => t.label === promoTier);
+  const isManual = !!selectedTier?.isManual;
+
+  // If the loaded pricing snapshot doesn't have the currently-picked tier
+  // (e.g. after switching regions to a workbook with a different promo list),
+  // fall back to "No Promotional Sale".
+  useEffect(() => {
+    if (promoTiers.length === 0) return;
+    if (!promoTiers.some((t) => t.label === promoTier)) {
+      setPromoTier("No Promotional Sale");
+    }
+  }, [promoTiers, promoTier]);
+
+  const additionalDepositPct = addlDepositActive ? ADDITIONAL_DEPOSIT_PCT : 0;
 
   return (
     <>
@@ -79,15 +104,67 @@ export default function CalculatorPage() {
                 }}
               />
             </div>
-            <div className="space-y-1">
-              <Label className="text-xs">Deposit</Label>
-              <p className="text-sm pt-2 font-medium">
-                {(depositPct * 100).toFixed(0)}%
-              </p>
+            <div className="space-y-1 max-w-sm">
+              <Label htmlFor="depositPct" className="text-xs">Deposit (%)</Label>
+              <Input
+                id="depositPct"
+                type="number"
+                step={1}
+                min={0}
+                max={100}
+                value={Number((depositPct * 100).toFixed(2))}
+                onChange={(e) => {
+                  const pct = Number(e.target.value);
+                  setDepositPct(Number.isFinite(pct) ? Math.max(0, Math.min(1, pct / 100)) : 0);
+                }}
+              />
               <p className="text-[10px] text-muted-foreground leading-tight">
-                Default 10% (spreadsheet default). Editable per quote.
+                Spreadsheet default 10%. Editable per quote.
               </p>
             </div>
+
+            <div className="space-y-1 md:col-span-2">
+              <Label className="text-xs">Promo Tier</Label>
+              <Select value={promoTier} onValueChange={setPromoTier}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {promoTiers.map((t) => (
+                    <SelectItem key={t.label} value={t.label}>{t.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {isManual && (
+              <div className="space-y-1 max-w-sm">
+                <Label htmlFor="manualDiscount" className="text-xs">Manual Discount (%)</Label>
+                <Input
+                  id="manualDiscount"
+                  type="number"
+                  step={0.5}
+                  min={0}
+                  max={100}
+                  value={Number((manualDiscount * 100).toFixed(2))}
+                  onChange={(e) => {
+                    const pct = Number(e.target.value);
+                    setManualDiscount(Number.isFinite(pct) ? Math.max(0, Math.min(1, pct / 100)) : 0);
+                  }}
+                />
+              </div>
+            )}
+
+            <div className="space-y-1 flex flex-col justify-center">
+              <Label className="text-xs">25% Special-Order Deposit</Label>
+              <div className="flex items-center gap-2 pt-1">
+                <Switch checked={addlDepositActive} onCheckedChange={setAddlDepositActive} />
+                <span className="text-xs text-muted-foreground">
+                  {addlDepositActive ? "Applied" : "Off"}
+                </span>
+              </div>
+            </div>
+
             {pricing && (
               <div className="col-span-2 md:col-span-4 text-xs text-muted-foreground -mt-1">
                 Pricing version {pricing.version} loaded
@@ -111,7 +188,10 @@ export default function CalculatorPage() {
             regionId={regionId}
             defaultState={stateDefault ? stateLabel(stateDefault.state_code) : undefined}
             taxPct={taxPct}
-            onDepositPctChange={setDepositPct}
+            promoTier={promoTier}
+            manualDiscount={isManual ? manualDiscount : undefined}
+            depositPct={depositPct}
+            additionalDepositPct={additionalDepositPct}
             key={`${regionId}|${stateCode}|${pricing.id}`}
           />
         )}

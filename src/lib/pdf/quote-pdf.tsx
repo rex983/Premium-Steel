@@ -197,6 +197,9 @@ export function QuotePdf({ quoteNumber, status, customer, result, validUntil, no
           <View style={styles.totalsRow}><Text>Additional Labor</Text><Text>{fmt(t.additionalLabor)}</Text></View>
           <View style={[styles.totalsRow, styles.bold]}><Text>Total</Text><Text>{fmt(t.total)}</Text></View>
           <View style={[styles.totalsRow, styles.muted]}><Text>{t.depositPct ? `Deposit (${(t.depositPct * 100).toFixed(0)}%)` : "Deposit"}</Text><Text>{fmt(t.depositAmount)}</Text></View>
+          {t.additionalDepositAmount > 0 && (
+            <View style={[styles.totalsRow, styles.muted]}><Text>Additional Deposit (25% Special Order)</Text><Text>{fmt(t.additionalDepositAmount)}</Text></View>
+          )}
           <View style={[styles.totalsRow, styles.bold]}><Text>Balance Due</Text><Text>{fmt(t.balanceDue)}</Text></View>
         </View>
 

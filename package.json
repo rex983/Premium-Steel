@@ -9,8 +9,9 @@
     "lint": "eslint",
     "test": "tsx scripts/test-engine.mjs",
     "smoke": "tsx scripts/smoke-full.mjs",
+    "smoke:calc": "tsx scripts/smoke-calculator.mjs",
     "parity": "tsx scripts/parity-test.mjs",
-    "test:all": "npm test && npm run smoke && npm run parity"
+    "test:all": "npm test && npm run smoke && npm run smoke:calc && npm run parity"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

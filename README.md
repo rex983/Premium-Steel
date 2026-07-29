@@ -21,10 +21,11 @@ push to the shared project (`xockuiyvxijuzlwlsfbu`).
 ## Tests
 
 ```sh
-npm test         # golden-case engine check against sample workbooks
-npm run smoke    # invariant sweep across states/sizes/gauges/promos/deposits
-npm run parity   # cell-by-cell parity vs both workbooks' lookup matrices
-npm run test:all # all three, in order
+npm test              # golden-case engine check against sample workbooks
+npm run smoke         # invariant sweep across states/sizes/gauges/promos/deposits
+npm run smoke:calc    # replay the calculator's config path with every UI knob
+npm run parity        # cell-by-cell parity vs both workbooks' lookup matrices
+npm run test:all      # all four, in order
 ```
 
 - **`npm test`** loads the older `IN OH KY IL TN WV MO 1_26_26.xlsx` and
@@ -37,6 +38,12 @@ npm run test:all # all three, in order
   geometry sweep, gauge/roof-style/panel variants, RUDs, anchors, insulation,
   snow load, all 4 promo tiers, Manual Discount, additional deposit, and edge
   cases. Enforces invariants (no NaN, deposit/tax math, monotonicity).
+- **`npm run smoke:calc`** replays the exact config shape `CalculatorForm`
+  sends to `priceBuilding()` across 7 real quote scenarios per region (calc
+  defaults, realistic 30×50×15 quote, fixed promo tier, Manual Discount at
+  arbitrary %, editable deposit override, 25% Additional Deposit toggle, and
+  all knobs at once) — validates every user-facing calculator control ties
+  out end-to-end.
 - **`npm run parity`** iterates every valid cell in the 07-26 workbooks'
   lookup matrices across 38 categories: base × gauge × width × length, legs,
   roof style, walk-ins, windows, roll-ups × position × seal, plans, calcs,

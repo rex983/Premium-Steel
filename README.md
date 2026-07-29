@@ -21,13 +21,27 @@ push to the shared project (`xockuiyvxijuzlwlsfbu`).
 ## Tests
 
 ```sh
-npm test         # runs the golden-case engine check against sample workbooks
+npm test         # golden-case engine check against sample workbooks
+npm run smoke    # invariant sweep across states/sizes/gauges/promos/deposits
+npm run parity   # cell-by-cell parity vs both workbooks' lookup matrices
+npm run test:all # all three, in order
 ```
 
-The engine test loads `IN OH KY IL TN WV MO 1_26_26.xlsx` and
-`MI WI PA MN 1_26_26.xlsx` from `C:/Users/Redir/Downloads/` and asserts
-priced outputs against the workbooks' cached totals. Missing reference files
-are reported as SKIPPED. All 7 south assertions currently PASS within $1.
+- **`npm test`** loads the older `IN OH KY IL TN WV MO 1_26_26.xlsx` and
+  `MI WI PA MN 1_26_26.xlsx` from `C:/Users/Redir/Downloads/` and asserts
+  priced outputs against the workbooks' cached totals (7 south assertions
+  within $1). Also smoke-checks the newer 07-26 workbooks parse cleanly,
+  expose "Manual Discount" as `isManual`, and apply it correctly. Missing
+  reference files are reported as SKIPPED.
+- **`npm run smoke`** exercises the current workbooks across every state, a
+  geometry sweep, gauge/roof-style/panel variants, RUDs, anchors, insulation,
+  snow load, all 4 promo tiers, Manual Discount, additional deposit, and edge
+  cases. Enforces invariants (no NaN, deposit/tax math, monotonicity).
+- **`npm run parity`** iterates every valid cell in the 07-26 workbooks'
+  lookup matrices (base × gauge × width × length, legs, roof style, walk-ins,
+  windows, roll-ups × position × seal, plans, calcs, leg surcharge, door
+  surcharge, sides V/HZ, ends V/HZ × FE/G) and asserts penny-perfect equality
+  with the engine's line-item output — ~5,000 assertions per full run.
 
 ## Deploy checklist
 

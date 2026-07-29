@@ -789,6 +789,143 @@ for (const [region, path] of Object.entries(FILES)) {
     }
     console.log(`  [30] anchors (105 MPH auto): ${n} configs`);
   }
+
+  // ---- [31-38] Snow engineering — parser parity for all 8 lookup tables
+  //     For each parsed matrix cell, read the corresponding workbook cell
+  //     directly and assert equality. This validates the pipeline that feeds
+  //     the engine's spacing/count lookups; engine-output parity is covered
+  //     by the golden case in `npm test` + snow monotonicity in `npm smoke`.
+  {
+    const snow = parsed.matrices.snow;
+
+    // [31] Truss Spacing (rows A2:A43, cols B1:HQ1)
+    if (snow?.trussSpacing?.spacingTable) {
+      const s = wb.getWorksheet("Snow - Truss Spacing");
+      let n = 0;
+      for (let i = 0; i < snow.trussSpacing.rowKeys.length; i++) {
+        for (let j = 0; j < snow.trussSpacing.colKeys.length; j++) {
+          const parsedVal = snow.trussSpacing.spacingTable[i]?.[j] ?? 0;
+          const row = i + 2; // row 2 = first data row
+          const col = j + 2; // col B = first data col
+          const raw = unwrap(s.getRow(row).getCell(col).value);
+          if (typeof raw !== "number") continue;
+          check("snow-trussSpacing", { i, j }, parsedVal, raw);
+          n++;
+        }
+      }
+      console.log(`  [31] snow truss spacing:  ${n} cells`);
+    }
+
+    // [32] Trusses (original counts) — B2:BE101 keyed by width-state col × length row
+    if (snow?.trusses?.counts) {
+      const s = wb.getWorksheet("Snow - Trusses ");
+      let n = 0;
+      for (let i = 0; i < Math.min(snow.trusses.lengths.length, snow.trusses.counts.length); i++) {
+        for (let j = 0; j < snow.trusses.colKeys.length; j++) {
+          const parsedVal = snow.trusses.counts[i]?.[j] ?? 0;
+          const row = i + 2;
+          const col = j + 2;
+          const raw = unwrap(s.getRow(row).getCell(col).value);
+          if (typeof raw !== "number") continue;
+          check("snow-trussCounts", { i, j }, parsedVal, raw);
+          n++;
+        }
+      }
+      console.log(`  [32] snow truss counts:   ${n} cells`);
+    }
+
+    // [33] Hat channel spacing — B2:H71
+    if (snow?.hatChannels?.spacingTable) {
+      const s = wb.getWorksheet("Snow - Hat Channels");
+      let n = 0;
+      for (let i = 0; i < snow.hatChannels.rowKeys.length; i++) {
+        for (let j = 0; j < snow.hatChannels.windHeader.length; j++) {
+          const parsedVal = snow.hatChannels.spacingTable[i]?.[j] ?? 0;
+          const raw = unwrap(s.getRow(i + 2).getCell(j + 2).value);
+          if (typeof raw !== "number") continue;
+          check("snow-hatSpacing", { i, j }, parsedVal, raw);
+          n++;
+        }
+      }
+      console.log(`  [33] snow hat spacing:    ${n} cells`);
+    }
+
+    // [34] Hat channel original counts — S2:Z8 (per state × width)
+    if (snow?.hatChannels?.originalCounts) {
+      const s = wb.getWorksheet("Snow - Hat Channels");
+      let n = 0;
+      for (let i = 0; i < snow.hatChannels.stateCodes.length; i++) {
+        for (let j = 0; j < snow.hatChannels.widthHeader.length; j++) {
+          const parsedVal = snow.hatChannels.originalCounts[i]?.[j] ?? 0;
+          const raw = unwrap(s.getRow(i + 2).getCell(19 + j).value); // col S = 19
+          if (typeof raw !== "number") continue;
+          check("snow-hatCounts", { i, j }, parsedVal, raw);
+          n++;
+        }
+      }
+      console.log(`  [34] snow hat counts:     ${n} cells`);
+    }
+
+    // [35] Girt spacing — B2:H6
+    if (snow?.girts?.spacingTable) {
+      const s = wb.getWorksheet("Snow - Girts ");
+      let n = 0;
+      for (let i = 0; i < snow.girts.girtRowKeys.length; i++) {
+        for (let j = 0; j < snow.girts.windHeader.length; j++) {
+          const parsedVal = snow.girts.spacingTable[i]?.[j] ?? 0;
+          const raw = unwrap(s.getRow(i + 2).getCell(j + 2).value);
+          if (typeof raw !== "number") continue;
+          check("snow-girtSpacing", { i, j }, parsedVal, raw);
+          n++;
+        }
+      }
+      console.log(`  [35] snow girt spacing:   ${n} cells`);
+    }
+
+    // [36] Girt original counts — M2:M22 (per leg height)
+    if (snow?.girts?.originalCol) {
+      const s = wb.getWorksheet("Snow - Girts ");
+      let n = 0;
+      for (let i = 0; i < snow.girts.legHeightCol.length; i++) {
+        const parsedVal = snow.girts.originalCol[i] ?? 0;
+        const raw = unwrap(s.getRow(i + 2).getCell(13).value); // col M = 13
+        if (typeof raw !== "number") continue;
+        check("snow-girtCounts", { i }, parsedVal, raw);
+        n++;
+      }
+      console.log(`  [36] snow girt counts:    ${n} cells`);
+    }
+
+    // [37] Vertical spacing — B2:V8
+    if (snow?.verticals?.spacingTable) {
+      const s = wb.getWorksheet("Snow - Verticals");
+      let n = 0;
+      for (let i = 0; i < snow.verticals.windCol.length; i++) {
+        for (let j = 0; j < snow.verticals.legHeightHeader.length; j++) {
+          const parsedVal = snow.verticals.spacingTable[i]?.[j] ?? 0;
+          const raw = unwrap(s.getRow(i + 2).getCell(j + 2).value);
+          if (typeof raw !== "number") continue;
+          check("snow-vertSpacing", { i, j }, parsedVal, raw);
+          n++;
+        }
+      }
+      console.log(`  [37] snow vert spacing:   ${n} cells`);
+    }
+
+    // [38] Vertical original counts — B14:I14 (per width)
+    if (snow?.verticals?.originalRow) {
+      const s = wb.getWorksheet("Snow - Verticals");
+      let n = 0;
+      for (let i = 0; i < snow.verticals.widthHeader.length; i++) {
+        const parsedVal = snow.verticals.originalRow[i] ?? 0;
+        const raw = unwrap(s.getRow(14).getCell(i + 2).value);
+        if (typeof raw !== "number") continue;
+        check("snow-vertCounts", { i }, parsedVal, raw);
+        n++;
+      }
+      console.log(`  [38] snow vert counts:    ${n} cells`);
+    }
+  }
 }
 
 console.log("\n" + "=".repeat(70));

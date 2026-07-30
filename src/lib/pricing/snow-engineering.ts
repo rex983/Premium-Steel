@@ -76,8 +76,13 @@ export function calcSnowEngineering(
     ? Math.ceil((config.width * 12) / verticalSpacing) + 1
     : 0;
   const extraVerticalsBase = Math.max(0, totalVerticalsNeeded - originalVerticals);
-  const extraVerticalsNeeded = extraVerticalsBase * endsEnclosed;
-  const peakHeight = config.height + extraVerticalsBase;
+  // Snow-Math D35 = (D34 - T8) × I34 × L28: extras multiplied by BOTH the
+  // enclosed-ends gate AND the ends quantity. Missing the qty factor made
+  // us underprice by 50% whenever endsQty was 2 (the common case).
+  const extraVerticalsNeeded = extraVerticalsBase * endsEnclosed * config.endsQty;
+  // Snow-Math U16 = D20 + U15, where U15 = ROUNDUP((width/2 × 3)/12, 0)
+  // = ROUNDUP(width/8, 0). Not related to extras count.
+  const peakHeight = config.height + Math.ceil(config.width / 8);
   const verticalUnitPrice = peakHeight * tubingPricePerFt;
   const verticalLineCost = verticalUnitPrice * extraVerticalsNeeded;
 

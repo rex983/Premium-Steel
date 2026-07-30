@@ -28,11 +28,14 @@ function Section({
   title,
   defaultOpen = true,
   contentClassName = "",
+  summary,
   children,
 }: {
   title: string;
   defaultOpen?: boolean;
   contentClassName?: string;
+  /** One-line recap shown under the title when collapsed. Blank string hides it. */
+  summary?: string;
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(defaultOpen);
@@ -42,10 +45,15 @@ function Section({
         className="cursor-pointer select-none py-3"
         onClick={() => setOpen((v) => !v)}
       >
-        <div className="flex items-center justify-between">
-          <h3 className="text-base font-semibold">{title}</h3>
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <h3 className="text-base font-semibold">{title}</h3>
+            {!open && summary && (
+              <p className="text-xs text-muted-foreground truncate mt-0.5">{summary}</p>
+            )}
+          </div>
           <ChevronDown
-            className={`h-4 w-4 text-muted-foreground transition-transform ${
+            className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${
               open ? "" : "-rotate-90"
             }`}
           />
@@ -155,6 +163,95 @@ export function CalculatorForm({
     setConfig((prev) => ({ ...prev, [key]: value }));
   };
 
+  const summaries = useMemo(() => {
+    const s: Record<string, string> = {};
+
+    const geo = [
+      `${config.width}'W × ${config.length}'L × ${config.height}'H`,
+      config.gauge?.toUpperCase(),
+      config.roofStyle,
+    ];
+    if (config.pitch) geo.push(`${config.pitch}/12P`);
+    if (config.overhang) geo.push(config.overhang);
+    s.geometry = geo.filter(Boolean).join(" · ");
+
+    const walls = [
+      `${config.sides} (${config.sidesQty})`,
+      `${config.ends} (${config.endsQty})`,
+    ];
+    if (config.wainscotSide) walls.push(`Wainscot Side ×${config.wainscotSideQty ?? 0}`);
+    if (config.wainscotEnd) walls.push(`Wainscot End ×${config.wainscotEndQty ?? 0}`);
+    if (config.baseTrim && config.baseTrim !== "0") walls.push(`Base ${config.baseTrim}`);
+    s.walls = walls.join(" · ");
+
+    const rud: string[] = [];
+    config.rollUpDoors.forEach((d) => {
+      if (d.qty > 0 && d.size) {
+        rud.push(`${d.qty}× ${d.size} ${d.position === "END" ? "End" : "Side"}`);
+      }
+    });
+    if (
+      config.frameOuts &&
+      config.frameOuts.qty > 0 &&
+      config.frameOuts.width &&
+      config.frameOuts.height
+    ) {
+      rud.push(
+        `Frame Out ${config.frameOuts.qty}× ${config.frameOuts.width}'×${config.frameOuts.height}'`
+      );
+    }
+    s.rud = rud.join(" · ");
+
+    const wdw: string[] = [];
+    config.walkInDoors.forEach((d) => {
+      if (d.qty > 0 && d.size) wdw.push(`${d.qty}× WID ${d.size}`);
+    });
+    config.windows.forEach((w) => {
+      if (w.qty > 0 && w.size) wdw.push(`${w.qty}× WIN ${w.size}`);
+    });
+    s.wdw = wdw.join(" · ");
+
+    const anch = [config.anchorType, config.windWarranty].filter(Boolean) as string[];
+    if (config.insulation) {
+      anch.push(
+        config.insulationType
+          ? `${config.insulation} · ${config.insulationType}`
+          : config.insulation
+      );
+    }
+    s.anchors = anch.join(" · ");
+
+    const upg: string[] = [];
+    if (config.upgrade26ga) {
+      upg.push(`26ga ${config.upgrade26gaCoverage ?? ""}`.trim());
+    }
+    if (config.premiumColor) {
+      upg.push(`${config.premiumColor} ${config.premiumColorCoverage ?? ""}`.trim());
+    }
+    if (config.colorScrews) upg.push(config.colorScrews);
+    s.upgrades = upg.join(" · ");
+
+    s.gutter = config.gutterSide
+      ? [config.gutterSide, config.gutterColor].filter(Boolean).join(" · ")
+      : "";
+
+    const trim: string[] = [];
+    if (config.foamClosure) trim.push(config.foamClosure);
+    if (config.extraSheetMetal && (config.extraSheetMetalQty ?? 0) > 0) {
+      trim.push(`${config.extraSheetMetalQty}× ${config.extraSheetMetal}`);
+    }
+    if (config.jtrim && (config.jtrimQty ?? 0) > 0) {
+      trim.push(`${config.jtrimQty}× ${config.jtrim}`);
+    }
+    s.trim = trim.join(" · ");
+
+    s.labor = (config.laborFees ?? []).filter(Boolean).join(" · ");
+
+    s.engineering = `${config.snowLoad} · ${config.windMph} MPH`;
+
+    return s;
+  }, [config]);
+
   type RudEntry = BuildingConfig["rollUpDoors"][number];
   type DoorEntry = BuildingConfig["walkInDoors"][number];
   type WindowEntry = BuildingConfig["windows"][number];
@@ -221,7 +318,11 @@ export function CalculatorForm({
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div className="lg:col-span-2 space-y-4">
-        <Section title="Building Geometry" contentClassName="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <Section
+          title="Building Geometry"
+          contentClassName="grid grid-cols-2 md:grid-cols-4 gap-3"
+          summary={summaries.geometry}
+        >
           <div className="space-y-1">
             <Label className="text-xs">Width (ft)</Label>
             <Select
@@ -299,7 +400,12 @@ export function CalculatorForm({
           </div>
         </Section>
 
-        <Section title="Walls" contentClassName="grid grid-cols-2 md:grid-cols-3 gap-3">
+        <Section
+          title="Walls"
+          contentClassName="grid grid-cols-2 md:grid-cols-3 gap-3"
+          defaultOpen={false}
+          summary={summaries.walls}
+        >
             <div className="space-y-1">
               <Label className="text-xs">Sides</Label>
               <Select
@@ -429,7 +535,13 @@ export function CalculatorForm({
             </div>
         </Section>
 
-        <Section title="Roll Up Doors" contentClassName="space-y-3">
+        <Section
+          title="Roll Up Doors & Frame Outs"
+          contentClassName="space-y-3"
+          defaultOpen={false}
+          summary={summaries.rud}
+        >
+          <div className="text-xs text-muted-foreground">Roll Up Doors</div>
           {[0, 1, 2].map((idx) => {
             const entry = config.rollUpDoors[idx];
             const size = entry?.size ?? "";
@@ -492,9 +604,73 @@ export function CalculatorForm({
               </div>
             );
           })}
+
+          <Separator />
+
+          <div className="text-xs text-muted-foreground">Frame Outs</div>
+          <div className="grid grid-cols-12 gap-2 items-end">
+            <div className="col-span-3 space-y-1">
+              <Label className="text-xs">Width</Label>
+              <Select
+                value={String(config.frameOuts?.width ?? "")}
+                onValueChange={(v) => update("frameOuts", { ...(config.frameOuts ?? { width: 0, height: 0, qty: 0, position: "SIDE" }), width: Number(v) })}
+              >
+                <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                <SelectContent>
+                  {(matrices.accessories.frameOuts?.widths ?? []).filter((w) => w > 0).map((w) => (
+                    <SelectItem key={w} value={String(w)}>{w}&apos;</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="col-span-3 space-y-1">
+              <Label className="text-xs">Height</Label>
+              <Select
+                value={String(config.frameOuts?.height ?? "")}
+                onValueChange={(v) => update("frameOuts", { ...(config.frameOuts ?? { width: 0, height: 0, qty: 0, position: "SIDE" }), height: Number(v) })}
+                disabled={!config.frameOuts?.width}
+              >
+                <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                <SelectContent>
+                  {(matrices.accessories.frameOuts?.heights ?? []).map((h) => (
+                    <SelectItem key={h} value={String(h)}>{h}&apos;</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="col-span-2 space-y-1">
+              <Label className="text-xs">Qty</Label>
+              <Input
+                type="number"
+                min={0}
+                value={config.frameOuts?.qty ?? 0}
+                onChange={(e) => update("frameOuts", { ...(config.frameOuts ?? { width: 0, height: 0, qty: 0, position: "SIDE" }), qty: Number(e.target.value) || 0 })}
+                disabled={!config.frameOuts?.width || !config.frameOuts?.height}
+              />
+            </div>
+            <div className="col-span-4 space-y-1">
+              <Label className="text-xs">Position</Label>
+              <Select
+                value={config.frameOuts?.position ?? "SIDE"}
+                onValueChange={(v) => update("frameOuts", { ...(config.frameOuts ?? { width: 0, height: 0, qty: 0, position: "SIDE" }), position: v as "SIDE" | "END" })}
+                disabled={!config.frameOuts?.qty}
+              >
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="SIDE">Side</SelectItem>
+                  <SelectItem value="END">End</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </Section>
 
-        <Section title="Walk-In Doors & Windows" contentClassName="space-y-3">
+        <Section
+          title="Walk-In Doors & Windows"
+          contentClassName="space-y-3"
+          defaultOpen={false}
+          summary={summaries.wdw}
+        >
           <div className="text-xs text-muted-foreground">Walk-In Doors</div>
           {[0, 1].map((idx) => {
             const entry = config.walkInDoors[idx];
@@ -568,7 +744,12 @@ export function CalculatorForm({
           })}
         </Section>
 
-        <Section title="Anchors & Insulation" contentClassName="grid grid-cols-2 gap-3">
+        <Section
+          title="Anchors & Insulation"
+          contentClassName="grid grid-cols-2 gap-3"
+          defaultOpen={false}
+          summary={summaries.anchors}
+        >
             <div className="space-y-1">
               <Label className="text-xs">Anchor Type</Label>
               <Select
@@ -643,7 +824,12 @@ export function CalculatorForm({
           </div>
         </Section>
 
-        <Section title="Upgrades" contentClassName="grid grid-cols-2 gap-3">
+        <Section
+          title="Upgrades"
+          contentClassName="grid grid-cols-2 gap-3"
+          defaultOpen={false}
+          summary={summaries.upgrades}
+        >
             <div className="space-y-1">
               <Label className="text-xs">26ga Panel Upgrade</Label>
               <Select
@@ -721,7 +907,12 @@ export function CalculatorForm({
             </div>
         </Section>
 
-        <Section title='6&quot; K-style Gutter' contentClassName="grid grid-cols-2 gap-3">
+        <Section
+          title='6&quot; K-style Gutter'
+          contentClassName="grid grid-cols-2 gap-3"
+          defaultOpen={false}
+          summary={summaries.gutter}
+        >
             <div className="space-y-1">
               <Label className="text-xs">Side</Label>
               <Select
@@ -755,7 +946,12 @@ export function CalculatorForm({
             </div>
         </Section>
 
-        <Section title="Trim & Closure" contentClassName="grid grid-cols-2 gap-3">
+        <Section
+          title="Trim & Closure"
+          contentClassName="grid grid-cols-2 gap-3"
+          defaultOpen={false}
+          summary={summaries.trim}
+        >
             <div className="space-y-1 col-span-2">
               <Label className="text-xs">Foam Closure</Label>
               <Select
@@ -825,63 +1021,12 @@ export function CalculatorForm({
             </div>
         </Section>
 
-        <Section title="Frame Outs" contentClassName="grid grid-cols-12 gap-2 items-end">
-            <div className="col-span-3 space-y-1">
-              <Label className="text-xs">Width</Label>
-              <Select
-                value={String(config.frameOuts?.width ?? "")}
-                onValueChange={(v) => update("frameOuts", { ...(config.frameOuts ?? { width: 0, height: 0, qty: 0, position: "SIDE" }), width: Number(v) })}
-              >
-                <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-                <SelectContent>
-                  {(matrices.accessories.frameOuts?.widths ?? []).filter((w) => w > 0).map((w) => (
-                    <SelectItem key={w} value={String(w)}>{w}&apos;</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="col-span-3 space-y-1">
-              <Label className="text-xs">Height</Label>
-              <Select
-                value={String(config.frameOuts?.height ?? "")}
-                onValueChange={(v) => update("frameOuts", { ...(config.frameOuts ?? { width: 0, height: 0, qty: 0, position: "SIDE" }), height: Number(v) })}
-                disabled={!config.frameOuts?.width}
-              >
-                <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-                <SelectContent>
-                  {(matrices.accessories.frameOuts?.heights ?? []).map((h) => (
-                    <SelectItem key={h} value={String(h)}>{h}&apos;</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="col-span-2 space-y-1">
-              <Label className="text-xs">Qty</Label>
-              <Input
-                type="number"
-                min={0}
-                value={config.frameOuts?.qty ?? 0}
-                onChange={(e) => update("frameOuts", { ...(config.frameOuts ?? { width: 0, height: 0, qty: 0, position: "SIDE" }), qty: Number(e.target.value) || 0 })}
-                disabled={!config.frameOuts?.width || !config.frameOuts?.height}
-              />
-            </div>
-            <div className="col-span-4 space-y-1">
-              <Label className="text-xs">Position</Label>
-              <Select
-                value={config.frameOuts?.position ?? "SIDE"}
-                onValueChange={(v) => update("frameOuts", { ...(config.frameOuts ?? { width: 0, height: 0, qty: 0, position: "SIDE" }), position: v as "SIDE" | "END" })}
-                disabled={!config.frameOuts?.qty}
-              >
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="SIDE">Side</SelectItem>
-                  <SelectItem value="END">End</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-        </Section>
-
-        <Section title="Labor Fees" contentClassName="space-y-3">
+        <Section
+          title="Labor Fees"
+          contentClassName="space-y-3"
+          defaultOpen={false}
+          summary={summaries.labor}
+        >
           {[0, 1].map((idx) => (
             <div key={idx} className="space-y-1">
               <Label className="text-xs">Labor Fee {idx + 1}</Label>
@@ -906,7 +1051,12 @@ export function CalculatorForm({
           ))}
         </Section>
 
-        <Section title="Engineering" contentClassName="grid grid-cols-2 gap-3">
+        <Section
+          title="Engineering"
+          contentClassName="grid grid-cols-2 gap-3"
+          defaultOpen={false}
+          summary={summaries.engineering}
+        >
             <div className="space-y-1">
               <Label className="text-xs">Snow Load</Label>
               <Select

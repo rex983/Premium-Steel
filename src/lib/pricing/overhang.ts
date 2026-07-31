@@ -1,4 +1,5 @@
 import type { BuildingConfig } from "./types";
+import { round2 } from "./_helpers";
 
 /**
  * Pricing - Base!F52 = D52 * F27
@@ -14,5 +15,5 @@ export function calcOverhang(
   const labelRow = overhangMatrix[config.overhang];
   if (!labelRow) return 0;
   const multiplier = labelRow[config.length] ?? 0;
-  return Math.round(multiplier * basePrice);
+  return round2(multiplier * basePrice);
 }

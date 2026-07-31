@@ -1,5 +1,6 @@
 import type { PlansMatrix } from "@/types/pricing";
 import type { BuildingConfig } from "./types";
+import { round2 } from "./_helpers";
 
 /**
  * Plans for Buildings — display-only line items (NOT added to balance).
@@ -13,9 +14,9 @@ export function calcPlansCost(config: BuildingConfig, plans: PlansMatrix): numbe
   const doorCount = (config.rollUpDoors || []).reduce((sum, d) => sum + d.qty, 0)
                   + (config.walkInDoors || []).reduce((sum, d) => sum + d.qty, 0);
   const doorExtra = plans.doorOpeningCost[doorCount] ?? 0;
-  return Math.round(base + legExtra + doorExtra);
+  return round2(base + legExtra + doorExtra);
 }
 
 export function calcCalcsCost(config: BuildingConfig, plans: PlansMatrix): number {
-  return Math.round(plans.calcs[config.length]?.[config.width] ?? 0);
+  return round2(plans.calcs[config.length]?.[config.width] ?? 0);
 }

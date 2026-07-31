@@ -1,6 +1,6 @@
 import type { AccessoriesMatrix } from "@/types/pricing";
 import type { BuildingConfig } from "./types";
-import { gridCell, num, type RawGrid } from "./_helpers";
+import { gridCell, num, round2, type RawGrid } from "./_helpers";
 
 /**
  * Accessory line items.
@@ -106,7 +106,7 @@ export function calcBaseTrim(config: BuildingConfig, matrices: AccessoriesMatrix
   if (!/Full Perimeter/i.test(config.baseTrim)) return 0;
   const rate = matrices.bt ?? 0;
   const perimeter = (config.width + config.length) * 2;
-  return Math.round(perimeter * rate);
+  return round2(perimeter * rate);
 }
 /**
  * Foam Closure — Pricing - Accessories!AO6 = VLOOKUP(I43, AS5:AT6, 2).
@@ -144,11 +144,14 @@ interface RateContext {
 
 function rateCoverageCost(rate: number, coverage: string, ctx: RateContext): number {
   if (rate <= 0) return 0;
+  // Workbook keeps cents on rate × base products (VLOOKUP × cell value).
+  // Rounding to whole dollars here shifts a $6,512.50 result to $6,513.00.
+  // The totals layer already applies round2() where it needs to.
   if (/^Fully Enclosed/i.test(coverage)) {
-    return Math.round((ctx.basePrice + ctx.sidesPrice + ctx.endsPrice) * rate);
+    return (ctx.basePrice + ctx.sidesPrice + ctx.endsPrice) * rate;
   }
   if (/^Roof Only/i.test(coverage)) {
-    return Math.round(ctx.basePrice * rate);
+    return ctx.basePrice * rate;
   }
   return 0;
 }
@@ -211,7 +214,7 @@ export function calcGutter(config: BuildingConfig, matrices: AccessoriesMatrix):
   const aa25 = length * mult + 2.5;
   const aa26 = (height + 1.75) * (length / 25) * mult;
   const lf = aa25 + aa26;
-  return Math.round(lf * matrices.gutter.ratePerLf);
+  return round2(lf * matrices.gutter.ratePerLf);
 }
 
 /**
@@ -222,7 +225,7 @@ export function calcExtraSheetMetal(config: BuildingConfig, matrices: Accessorie
   const qty = config.extraSheetMetalQty ?? 0;
   if (!label || qty <= 0) return 0;
   const price = matrices.sheetMetal?.find((s) => s.label.trim() === label)?.price ?? 0;
-  return Math.round(qty * price);
+  return round2(qty * price);
 }
 
 /** J-Trim — Pricing - Accessories!E43 = O46 (qty) × VLOOKUP(P46, C37:D40, 2). */
@@ -231,7 +234,7 @@ export function calcJTrim(config: BuildingConfig, matrices: AccessoriesMatrix): 
   const qty = config.jtrimQty ?? 0;
   if (!label || qty <= 0) return 0;
   const price = matrices.jtrim?.find((j) => j.label.trim() === label)?.price ?? 0;
-  return Math.round(qty * price);
+  return round2(qty * price);
 }
 
 /**
@@ -249,7 +252,7 @@ export function calcFrameOuts(config: BuildingConfig, matrices: AccessoriesMatri
   if (heightIdx < 0 || widthIdx < 0) return 0;
   const base = prices[heightIdx]?.[widthIdx] ?? 0;
   const adder = fo.position === "SIDE" ? sideAdderByWidth[widthIdx] ?? 0 : 0;
-  return Math.round((base + adder) * fo.qty);
+  return round2((base + adder) * fo.qty);
 }
 
 /**
@@ -273,7 +276,7 @@ export function calcLaborFees(config: BuildingConfig, matrices: AccessoriesMatri
         .filter(({ l }) => l <= config.length);
       lenIdx = eligible.length > 0 ? eligible[eligible.length - 1].idx : 0;
     }
-    out.push(Math.round(lf.prices[labelIdx]?.[lenIdx] ?? 0));
+    out.push(round2(lf.prices[labelIdx]?.[lenIdx] ?? 0));
   }
   return out;
 }

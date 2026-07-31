@@ -1,4 +1,5 @@
 import type { BuildingConfig } from "./types";
+import { round2 } from "./_helpers";
 
 /**
  * Pricing - Base!F42 = D42 * F27
@@ -19,5 +20,5 @@ export function calcRoofPitch(
   if (!widthRow) return 0;
   // The matrix indexes by raw width header; if exact width missing, fall back to nearest key
   const multiplier = widthRow[config.width] ?? 0;
-  return Math.round(multiplier * basePrice);
+  return round2(multiplier * basePrice);
 }

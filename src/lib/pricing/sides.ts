@@ -1,7 +1,7 @@
 import type { SidesMatrix } from "@/types/pricing";
 import type { BuildingConfig } from "./types";
 import { QTY_MULTIPLIER, ROOF_STYLE_CODE } from "./constants";
-import { gridCell, num, colToLetter, letterToCol, type RawGrid } from "./_helpers";
+import { gridCell, num, colToLetter, letterToCol, round2, type RawGrid } from "./_helpers";
 
 /**
  * Pricing - Sides
@@ -35,7 +35,7 @@ export function calcSides(config: BuildingConfig, matrices: SidesMatrix & { raw?
   if (rowIdx === 0) return 0;
 
   const price = num(gridCell(grid, rowIdx, colToLetter(colIdx)));
-  return Math.round(price * QTY_MULTIPLIER(config.sidesQty));
+  return round2(price * QTY_MULTIPLIER(config.sidesQty));
 }
 
 export function calcWainscotSide(
@@ -52,7 +52,7 @@ export function calcWainscotSide(
   const colIdx = findHeaderCol(grid, 36, widthKey, "H", "AQ");
   if (colIdx === 0) return 0;
   const price = num(gridCell(grid, 37, colToLetter(colIdx)));
-  return Math.round(price * QTY_MULTIPLIER(wainscotQty));
+  return round2(price * QTY_MULTIPLIER(wainscotQty));
 }
 
 function findHeaderCol(grid: RawGrid, row: number, key: string, startCol: string, endCol: string): number {

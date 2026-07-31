@@ -1,7 +1,7 @@
 import type { EndsMatrix } from "@/types/pricing";
 import type { BuildingConfig } from "./types";
 import { END_QTY_MULTIPLIER } from "./constants";
-import { gridCell, num, colToLetter, letterToCol, type RawGrid } from "./_helpers";
+import { gridCell, num, colToLetter, letterToCol, round2, type RawGrid } from "./_helpers";
 
 /**
  * Pricing - Ends
@@ -35,7 +35,7 @@ export function calcEnds(config: BuildingConfig, matrices: EndsMatrix & { raw?: 
   if (rowIdx === 0) return 0;
 
   const price = num(gridCell(grid, rowIdx, colToLetter(colIdx)));
-  return Math.round(price * END_QTY_MULTIPLIER(config.endsQty));
+  return round2(price * END_QTY_MULTIPLIER(config.endsQty));
 }
 
 /**
@@ -58,7 +58,7 @@ export function calcWainscotEnd(
   const colIdx = findHeaderCol(grid, 30, key, "B", "T");
   if (colIdx === 0) return 0;
   const price = num(gridCell(grid, 31, colToLetter(colIdx)));
-  return Math.round(price * wainscotQty); // 0→0, 1→×1, 2→×2
+  return round2(price * wainscotQty); // 0→0, 1→×1, 2→×2
 }
 
 function findHeaderCol(grid: RawGrid, row: number, key: string, startCol: string, endCol: string): number {

@@ -39,6 +39,9 @@ const FILES = {
 };
 
 const TOL = 0.01;
+// Workbook cells keep cents (e.g. $6,512.50 for 26ga upgrade); match the
+// engine's round2 to preserve them instead of collapsing to whole dollars.
+const round2 = (n) => Math.round(n * 100) / 100;
 const totals = { total: 0, matched: 0, mismatched: 0 };
 const perCategory = {};
 const mismatches = [];
@@ -358,7 +361,7 @@ for (const [region, path] of Object.entries(FILES)) {
         // sidesQty=2 → engine result = matrix cell × 1 = matrix cell
         const cfg = { ...base(state), length: len, height: h, width: 30, sidesPanel: orient, sidesQty: 2 };
         const out = engineMod.priceBuilding(cfg, parsed.matrices);
-        check(`sides-${shortO}`, { L: len, H: h }, getLine(out, "sides"), Math.round(want));
+        check(`sides-${shortO}`, { L: len, H: h }, getLine(out, "sides"), round2(want));
         nSides++;
       }
     }
@@ -387,7 +390,7 @@ for (const [region, path] of Object.entries(FILES)) {
         const endsLabel = code === "G" ? "Gable" : "Enclosed Ends";
         const cfg = { ...base(state), width: w, height: h, length: 50, endsPanel: orient, endsQty: 1, ends: endsLabel };
         const out = engineMod.priceBuilding(cfg, parsed.matrices);
-        check(`ends-${shortO}`, { W: w, H: h, code }, getLine(out, "ends"), Math.round(want));
+        check(`ends-${shortO}`, { W: w, H: h, code }, getLine(out, "ends"), round2(want));
         nEnds++;
       }
     }
@@ -400,7 +403,7 @@ for (const [region, path] of Object.entries(FILES)) {
     const bt = parsed.matrices.accessories?.bt ?? 0;
     let n = 0;
     for (const w of REAL_WIDTHS) for (const l of [20, 40, 60, 80, 100]) {
-      const expected = Math.round((w + l) * 2 * bt);
+      const expected = round2((w + l) * 2 * bt);
       const cfg = { ...base(state), width: w, length: l, baseTrim: "Full Perimeter Base Trim" };
       const out = engineMod.priceBuilding(cfg, parsed.matrices);
       check("baseTrim", { W: w, L: l }, getLine(out, "baseTrim"), expected);
@@ -432,7 +435,7 @@ for (const [region, path] of Object.entries(FILES)) {
       for (const qty of [1, 5]) {
         const cfg = { ...base(state), extraSheetMetal: item.label, extraSheetMetalQty: qty };
         const out = engineMod.priceBuilding(cfg, parsed.matrices);
-        check("sheetMetal", { label: item.label, qty }, getLine(out, "extraSheet"), Math.round(item.price * qty));
+        check("sheetMetal", { label: item.label, qty }, getLine(out, "extraSheet"), round2(item.price * qty));
         n++;
       }
     }
@@ -441,7 +444,7 @@ for (const [region, path] of Object.entries(FILES)) {
       for (const qty of [1, 5]) {
         const cfg = { ...base(state), jtrim: item.label, jtrimQty: qty };
         const out = engineMod.priceBuilding(cfg, parsed.matrices);
-        check("jtrim", { label: item.label, qty }, getLine(out, "jtrim"), Math.round(item.price * qty));
+        check("jtrim", { label: item.label, qty }, getLine(out, "jtrim"), round2(item.price * qty));
         n++;
       }
     }
@@ -475,7 +478,7 @@ for (const [region, path] of Object.entries(FILES)) {
         const label = lf.labels[li];
         if (!label || label === "0") continue;
         for (const ln of lf.lengths) {
-          const want = Math.round(lf.prices[li]?.[lf.lengths.indexOf(ln)] ?? 0);
+          const want = round2(lf.prices[li]?.[lf.lengths.indexOf(ln)] ?? 0);
           const cfg = { ...base(state), length: ln, laborFees: [label] };
           const out = engineMod.priceBuilding(cfg, parsed.matrices);
           check("laborFee", { label, L: ln }, getLine(out, "laborFee1"), want);
@@ -498,7 +501,7 @@ for (const [region, path] of Object.entries(FILES)) {
           for (const pos of ["SIDE", "END"]) {
             const sideAdder = pos === "SIDE" ? (fo.sideAdderByWidth[wi] ?? 0) : 0;
             for (const qty of [1, 2]) {
-              const expected = Math.round((priceCell + sideAdder) * qty);
+              const expected = round2((priceCell + sideAdder) * qty);
               const cfg = { ...base(state), frameOuts: { width: fo.widths[wi], height: fo.heights[hi], qty, position: pos } };
               const out = engineMod.priceBuilding(cfg, parsed.matrices);
               check("frameOuts", { H: fo.heights[hi], W: fo.widths[wi], pos, qty }, getLine(out, "frameOuts"), expected);
@@ -529,7 +532,7 @@ for (const [region, path] of Object.entries(FILES)) {
       for (const qty of [1, 2]) {
         const cfg = { ...base(state), width: w, endsPanel: orient, wainscotEnd: "End Wall", wainscotEndQty: qty };
         const out = engineMod.priceBuilding(cfg, parsed.matrices);
-        check("wainscotEnd", { W: w, orient, qty }, getLine(out, "wainscotEnd"), Math.round(want * qty));
+        check("wainscotEnd", { W: w, orient, qty }, getLine(out, "wainscotEnd"), round2(want * qty));
         n++;
       }
     }
@@ -553,7 +556,7 @@ for (const [region, path] of Object.entries(FILES)) {
         const mult = qty === 2 ? 1 : 0.5;
         const cfg = { ...base(state), length: len, sidesPanel: orient, wainscotSide: "Sidewall", wainscotSideQty: qty };
         const out = engineMod.priceBuilding(cfg, parsed.matrices);
-        check("wainscotSide", { L: len, orient, qty }, getLine(out, "wainscotSide"), Math.round(want * mult));
+        check("wainscotSide", { L: len, orient, qty }, getLine(out, "wainscotSide"), round2(want * mult));
         n++;
       }
     }
@@ -579,7 +582,7 @@ for (const [region, path] of Object.entries(FILES)) {
           const cfg = { ...base(state), width: wNum, length: l, pitch, pitchUnit: "12P" };
           const out = engineMod.priceBuilding(cfg, parsed.matrices);
           const basePrice = getLine(out, "base");
-          const expected = Math.round(mult * basePrice);
+          const expected = round2(mult * basePrice);
           check("roofPitch", { pitch, W: wNum, L: l }, getLine(out, "pitch"), expected);
           n++;
         }
@@ -603,7 +606,7 @@ for (const [region, path] of Object.entries(FILES)) {
           const cfg = { ...base(state), width: w, length: lNum, overhang: label };
           const out = engineMod.priceBuilding(cfg, parsed.matrices);
           const basePrice = getLine(out, "base");
-          const expected = Math.round(mult * basePrice);
+          const expected = round2(mult * basePrice);
           check("overhang", { label, L: lNum, W: w }, getLine(out, "overhang"), expected);
           n++;
         }
@@ -626,7 +629,7 @@ for (const [region, path] of Object.entries(FILES)) {
         const bp = getLine(out, "base");
         const sp = getLine(out, "sides");
         const ep = getLine(out, "ends");
-        const expected = coverage === "Fully Enclosed" ? Math.round((bp + sp + ep) * r.rate) : Math.round(bp * r.rate);
+        const expected = coverage === "Fully Enclosed" ? round2((bp + sp + ep) * r.rate) : round2(bp * r.rate);
         check("26gaUpgrade", { label: r.label, coverage }, getLine(out, "26ga"), expected);
         n++;
       }
@@ -646,7 +649,7 @@ for (const [region, path] of Object.entries(FILES)) {
         const bp = getLine(out, "base");
         const sp = getLine(out, "sides");
         const ep = getLine(out, "ends");
-        const expected = coverage === "Fully Enclosed" ? Math.round((bp + sp + ep) * r.rate) : Math.round(bp * r.rate);
+        const expected = coverage === "Fully Enclosed" ? round2((bp + sp + ep) * r.rate) : round2(bp * r.rate);
         check("premiumColors", { label: r.label, coverage }, getLine(out, "premium"), expected);
         n++;
       }
@@ -666,7 +669,7 @@ for (const [region, path] of Object.entries(FILES)) {
       const sp = getLine(out, "sides");
       const ep = getLine(out, "ends");
       const coverage = /Fully Enclosed/i.test(r.label) ? "Fully Enclosed" : "Roof Only";
-      const expected = coverage === "Fully Enclosed" ? Math.round((bp + sp + ep) * r.rate) : Math.round(bp * r.rate);
+      const expected = coverage === "Fully Enclosed" ? round2((bp + sp + ep) * r.rate) : round2(bp * r.rate);
       check("colorScrews", { label: r.label }, getLine(out, "colorScrews"), expected);
       n++;
     }
@@ -689,7 +692,7 @@ for (const [region, path] of Object.entries(FILES)) {
             const aa25 = l * side.multiplier + 2.5;
             const aa26 = (h + 1.75) * (l / 25) * side.multiplier;
             const lf = aa25 + aa26;
-            const expected = Math.round(lf * g.ratePerLf);
+            const expected = round2(lf * g.ratePerLf);
             const cfg = { ...base(state), length: l, height: h, width: 30, gutterSide: side.label };
             const out = engineMod.priceBuilding(cfg, parsed.matrices);
             check("gutter", { side: side.label, L: l, H: h }, getLine(out, "gutter"), expected);
@@ -736,7 +739,7 @@ for (const [region, path] of Object.entries(FILES)) {
       for (const qty of [1, 5, 10]) {
         const cfg = { ...base(state), anchorType: u.label, windWarranty: "Anchors Only", anchorQty: qty };
         const out = engineMod.priceBuilding(cfg, parsed.matrices);
-        check("anchors-user", { type: u.label, qty }, getLine(out, "anchors"), Math.round(u.price * qty));
+        check("anchors-user", { type: u.label, qty }, getLine(out, "anchors"), round2(u.price * qty));
         n++;
       }
     }
@@ -773,7 +776,7 @@ for (const [region, path] of Object.entries(FILES)) {
                 if (under.length > 0) sidesAnchors = row[under[under.length - 1]];
               }
             }
-            const expected = Math.round(u.price * (endsAnchors + sidesAnchors));
+            const expected = round2(u.price * (endsAnchors + sidesAnchors));
             const cfg = {
               ...base(state),
               width: w, length: l, endsQty: 2, ends: "Enclosed Ends",

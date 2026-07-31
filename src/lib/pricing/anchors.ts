@@ -1,6 +1,6 @@
 import type { AnchorsMatrix } from "@/types/pricing";
 import type { BuildingConfig } from "./types";
-import { gridCell, num, type RawGrid } from "./_helpers";
+import { gridCell, num, round2, type RawGrid } from "./_helpers";
 
 /**
  * Anchor pricing — mirrors `Pricing - Anchors!I57`.
@@ -26,7 +26,7 @@ export function calcAnchors(config: BuildingConfig, matrices: AnchorsMatrix & { 
 
   if (/Anchors\s*Only/i.test(warranty)) {
     const qty = config.anchorQty ?? 0;
-    return Math.round(unitPrice * qty);
+    return round2(unitPrice * qty);
   }
 
   if (/Wind\s*Warranty/i.test(warranty)) {
@@ -42,7 +42,7 @@ export function calcAnchors(config: BuildingConfig, matrices: AnchorsMatrix & { 
 
     const sidesAnchors = lookupSidesAnchors(matrices, anchorType, config.length);
     const autoQty = endsAnchors + sidesAnchors;
-    return Math.round(unitPrice * autoQty);
+    return round2(unitPrice * autoQty);
   }
 
   return cachedI57(matrices, true);

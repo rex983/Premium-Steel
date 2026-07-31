@@ -1,6 +1,6 @@
 import type { SnowMatrices, SnowChangersMatrix, SnowStateConstants } from "@/types/pricing";
 import type { BuildingConfig, SnowEngineeringBreakdown } from "./types";
-import { matchString } from "./_helpers";
+import { matchString, round2 } from "./_helpers";
 
 /**
  * Snow engineering — port of the `Snow - *` sheets' INDEX/MATCH chains.
@@ -90,20 +90,20 @@ export function calcSnowEngineering(
     trussSpacing: trussSpacing > 0 ? `${trussSpacing}"` : "—",
     originalTrusses,
     extraTrussesNeeded,
-    trussPrice: Math.round(trussLineCost),
+    trussPrice: round2(trussLineCost),
     hatChannelSpacing: hatChannelSpacing > 0 ? `${hatChannelSpacing}"` : "—",
     originalHatChannels,
     extraChannelsNeeded,
-    hatChannelPrice: Math.round(channelLineCost),
+    hatChannelPrice: round2(channelLineCost),
     girtSpacing: girtSpacing > 0 ? `${girtSpacing}"` : "—",
     originalGirts,
     extraGirtsNeeded,
-    girtPrice: Math.round(girtLineCost),
+    girtPrice: round2(girtLineCost),
     verticalSpacing: verticalSpacing > 0 ? `${verticalSpacing}"` : "—",
     originalVerticals,
     extraVerticalsNeeded,
-    verticalPrice: Math.round(verticalLineCost),
-    totalEngineering: Math.round(trussLineCost + channelLineCost + girtLineCost + verticalLineCost),
+    verticalPrice: round2(verticalLineCost),
+    totalEngineering: round2(trussLineCost + channelLineCost + girtLineCost + verticalLineCost),
   };
 }
 

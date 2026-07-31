@@ -1,4 +1,5 @@
 import type { LineItem, EngineTotals } from "./types";
+import { round2 } from "./_helpers";
 
 /**
  * Combine all line items into PSB-Quote Sheet totals (rows 24–52 + R55).
@@ -64,6 +65,3 @@ export function computeTotals(
   };
 }
 
-function round2(n: number): number {
-  return Math.round(n * 100) / 100;
-}

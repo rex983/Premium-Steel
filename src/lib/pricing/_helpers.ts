@@ -54,3 +54,13 @@ export function matchString(needle: string, haystack: readonly string[]): number
   }
   return 0;
 }
+
+/**
+ * Round to 2 decimals — the workbook keeps cents on rate × base products
+ * and any per-line rounding should match that precision. Rounding to whole
+ * dollars (Math.round) collapses $6,512.50 → $6,513.00, breaking parity
+ * with the spreadsheet.
+ */
+export function round2(n: number): number {
+  return Math.round(n * 100) / 100;
+}

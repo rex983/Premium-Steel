@@ -105,6 +105,14 @@ export interface LineItem {
   price: number;
   // Optional sub-line items (engineering breakdown)
   children?: LineItem[];
+  /**
+   * When `false`, the line displays in the itemized list but is EXCLUDED
+   * from Total Taxable Sale. Matches the workbook layout where labor fees
+   * show in the description column but are not summed into AC26 — they
+   * flow through AC38 (Additional Labor) instead, applied after tax.
+   * Defaults to true (taxable) when unspecified.
+   */
+  taxable?: boolean;
 }
 
 export interface EngineTotals {

@@ -32,7 +32,12 @@ export function computeTotals(
   depositPct: number = DEFAULT_DEPOSIT_PCT,
   additionalDepositPct: number = DEFAULT_ADDITIONAL_DEPOSIT_PCT,
 ): EngineTotals {
-  const lineSum = lineItems.reduce((sum, li) => sum + li.price, 0);
+  // Labor-fee line items carry taxable:false — they display in the itemized
+  // list but flow through Additional Labor after tax (workbook AC38), not
+  // through the taxable sum. Everything else is taxable by default.
+  const lineSum = lineItems
+    .filter((li) => li.taxable !== false)
+    .reduce((sum, li) => sum + li.price, 0);
 
   const totalTaxableSale = lineSum + engineeringTotal + promoDiscount;
   const taxAmount = round2(totalTaxableSale * taxPct);

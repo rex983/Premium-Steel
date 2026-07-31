@@ -96,27 +96,30 @@ export function priceBuilding(
   push(lineItems, "extras2", "Extras", extras[1]);
   push(lineItems, "interior", "Interior Walls", calcInteriorWalls(config, matrices.accessories));
 
-  // Labor fees (on the line-item side; equipmentLabor goes into totals separately)
+  // Labor fees display in the itemized list but are EXCLUDED from taxable base
+  // (workbook AC26 sums R24:U52, R55 + AC24 — labor lives in R53:R54 and only
+  // flows in through AC38 = Additional Labor, added after tax).
   const labor = calcLaborFees(config, matrices.accessories);
-  push(lineItems, "laborFee1", "Labor Fees", labor[0]);
-  push(lineItems, "laborFee2", "Labor Fees", labor[1]);
+  push(lineItems, "laborFee1", "Labor Fees", labor[0], false);
+  push(lineItems, "laborFee2", "Labor Fees", labor[1], false);
 
   // Snow engineering (R55)
   const engineering = calcSnowEngineering(config, matrices.snow);
 
-  // Promo (R24:U52 + R55 sum × tier pct)
-  const lineSum = lineItems.reduce((s, li) => s + li.price, 0);
+  // Promo (R24:U52 + R55 sum × tier pct) — excludes labor per workbook
+  const taxableLineSum = lineItems
+    .filter((li) => li.taxable !== false)
+    .reduce((s, li) => s + li.price, 0);
   const promoDiscount = calcPromoDiscount(
     config.promoTier,
     matrices.promotions,
-    lineSum + engineering.totalEngineering,
+    taxableLineSum + engineering.totalEngineering,
     config.manualDiscount,
   );
 
   // Equipment / additional labor (added in totals, not as line items).
   // "T" states scale labor by the taxable-sale base, so compute that first.
-  const preLaborTaxable = lineItems.reduce((s, li) => s + li.price, 0) +
-    engineering.totalEngineering + promoDiscount;
+  const preLaborTaxable = taxableLineSum + engineering.totalEngineering + promoDiscount;
   const equipmentLabor = calcEquipmentLabor(config, matrices.laborEquipment, preLaborTaxable);
   const additionalLabor = labor[0] + labor[1];
 
@@ -146,6 +149,6 @@ export function priceBuilding(
   };
 }
 
-function push(arr: LineItem[], key: string, label: string, price: number) {
-  arr.push({ key, label, price });
+function push(arr: LineItem[], key: string, label: string, price: number, taxable = true) {
+  arr.push({ key, label, price, taxable });
 }

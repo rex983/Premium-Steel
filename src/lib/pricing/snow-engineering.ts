@@ -133,10 +133,35 @@ function resolveInputs(config: BuildingConfig, ch: SnowChangersMatrix): Resolved
 }
 
 // C102 = 1 if (wind > 130 OR snowCode != "30GL"), else 0.
+// Uses raw user wind — matches workbook Snow-Changers B100 = IF(B99>130, 1, 0)
+// where B99 = 'PSB-Quote Sheet'!J55 (user's raw wind, not bucketed).
 function computeC102(config: BuildingConfig, snowCode: string): 0 | 1 {
   const isHighWind = config.windMph > 130;
   const isElevatedSnow = snowCode !== "30GL";
   return isHighWind || isElevatedSnow ? 1 : 0;
+}
+
+/**
+ * Snap user wind down to the discrete lookup row the workbook uses.
+ *
+ * All snow-family spacing lookups (trusses/hat/girts/verticals) pull wind via
+ * Snow-Changers F6, which maps user wind through a row-2 bucket table:
+ *   wind 0-130   → 105
+ *   wind 131-140 → 140
+ *   wind 141-155 → 155
+ *   wind 156-165 → 165
+ *   wind 166+    → 180
+ *
+ * Without this bucketing, picking 115 or 130 in the calculator reads rows the
+ * workbook never touches (they're dead data in the source table), inflating
+ * engineering by 1-2 extra verticals in the common Enclosed-Ends case.
+ */
+function bucketWind(wind: number): number {
+  if (wind <= 130) return 105;
+  if (wind <= 140) return 140;
+  if (wind <= 155) return 155;
+  if (wind <= 165) return 165;
+  return 180;
 }
 
 // ============================================================================
@@ -151,7 +176,7 @@ function lookupTrussSpacing(
   if (!ts?.rowKeys?.length || !ts.colKeys?.length) return 0;
 
   const rowKey = `${ctx.legSymbol}-${ctx.snowCode}`;
-  const colKey = `${ctx.endsCode}-${config.windMph}-${ctx.trussWidth}-${ctx.styleCode}`;
+  const colKey = `${ctx.endsCode}-${bucketWind(config.windMph)}-${ctx.trussWidth}-${ctx.styleCode}`;
 
   const rowIdx = matchString(rowKey, ts.rowKeys);
   const colIdx = matchString(colKey, ts.colKeys);
@@ -196,7 +221,7 @@ function lookupHatChannelSpacing(
   if (!hc?.rowKeys?.length || !hc.windHeader?.length) return 0;
   const rowKey = `${ctx.hcWidth}-${ctx.snowCode}`;
   const rowIdx = matchString(rowKey, hc.rowKeys);
-  const colIdx = hc.windHeader.indexOf(config.windMph) + 1;
+  const colIdx = hc.windHeader.indexOf(bucketWind(config.windMph)) + 1;
   if (rowIdx === 0 || colIdx === 0) return 0;
   return hc.spacingTable[rowIdx - 1]?.[colIdx - 1] ?? 0;
 }
@@ -225,7 +250,7 @@ function lookupGirtSpacing(
   const bucket = bucketIdx >= 0 ? g.trussSpacingBucket[bucketIdx] : trussSpacing;
 
   const rowIdx = g.girtRowKeys.indexOf(bucket) + 1;
-  const colIdx = g.windHeader.indexOf(config.windMph) + 1;
+  const colIdx = g.windHeader.indexOf(bucketWind(config.windMph)) + 1;
   if (rowIdx === 0 || colIdx === 0) return 0;
   return g.spacingTable[rowIdx - 1]?.[colIdx - 1] ?? 0;
 }
@@ -242,7 +267,7 @@ function lookupVerticalSpacing(config: BuildingConfig, snow: SnowMatrices): numb
   const v = snow.verticals;
   if (!v?.legHeightHeader?.length || !v.windCol?.length) return 0;
   const colIdx = v.legHeightHeader.indexOf(config.height) + 1;
-  const rowIdx = v.windCol.indexOf(config.windMph) + 1;
+  const rowIdx = v.windCol.indexOf(bucketWind(config.windMph)) + 1;
   if (rowIdx === 0 || colIdx === 0) return 0;
   return v.spacingTable[rowIdx - 1]?.[colIdx - 1] ?? 0;
 }

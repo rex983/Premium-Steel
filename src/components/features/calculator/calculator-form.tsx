@@ -1079,7 +1079,7 @@ export function CalculatorForm({
             >
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {[105, 115, 130, 140, 155, 165, 180].map((w) => (
+                {Array.from({ length: 181 }, (_, w) => (
                   <SelectItem key={w} value={String(w)}>{w}</SelectItem>
                 ))}
               </SelectContent>

@@ -11,6 +11,7 @@ import {
   History,
   SlidersHorizontal,
   Users,
+  UserCog,
   Snowflake,
 } from "lucide-react";
 import {
@@ -39,6 +40,7 @@ const adminItems = [
   { title: "Regions", href: "/admin/regions", icon: Map },
   { title: "State → Region", href: "/admin/states", icon: Snowflake },
   { title: "Config", href: "/admin/config", icon: SlidersHorizontal },
+  { title: "Users", href: "/admin/users", icon: UserCog },
   { title: "Audit Log", href: "/admin/audit-log", icon: History },
 ];
 

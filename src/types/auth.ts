@@ -1,7 +1,19 @@
 import type { DefaultSession } from "next-auth";
 
 export type UserRole = "admin" | "manager" | "sales_rep" | "viewer";
-export type Office = "Harbor" | "Marion";
+// Matches the launcher's shared profiles.office column.
+export type Office = "Harbor" | "Marion" | "BST" | "RnD";
+
+export interface UserProfile {
+  id: string;
+  email: string;
+  name: string | null;
+  role: UserRole;
+  office: Office | null;
+  is_it: boolean | null;
+  created_at: string;
+  updated_at: string;
+}
 
 declare module "next-auth" {
   interface Session {

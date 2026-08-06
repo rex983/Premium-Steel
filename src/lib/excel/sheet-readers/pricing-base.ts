@@ -154,7 +154,11 @@ export function readColorScrews(sheet: WorkSheet): RateOption[] {
 }
 
 /**
- * Gutter — AA28 ($/lf), AD25:AE26 side multiplier, S24:T27 colors (display only).
+ * Gutter — AA28 ($/lf), AD25:AE26 side multiplier, AF22:AF26 colors (display only).
+ *
+ * Colors come from the workbook's `guttercolor` named range (AF22:AF26):
+ * White, Black, Charcoal Gray, Brown, Tan. These are the roof/trim palette,
+ * NOT the Premium Colors palette (S24:S27) which is a separate paid upgrade.
  *
  * Formula:
  *   total_lf = ((length × side_mult) + 2.5) + ((height + 1.75) × (length/25) × side_mult)
@@ -171,8 +175,8 @@ export function readGutter(sheet: WorkSheet): GutterMatrix {
     sides.push({ label, multiplier });
   }
   const colors: string[] = [];
-  for (let r = 24; r <= 27; r++) {
-    const label = str(sheet[`S${r}`]?.v).trim();
+  for (let r = 22; r <= 26; r++) {
+    const label = str(sheet[`AF${r}`]?.v).trim();
     if (!label || label === "0") continue;
     colors.push(label);
   }

@@ -65,6 +65,14 @@ function Section({
   );
 }
 
+function SubHeading({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="col-span-full text-xs font-semibold uppercase tracking-wide text-muted-foreground pt-2 first:pt-0">
+      {children}
+    </div>
+  );
+}
+
 export interface CalculatorFormProps {
   matrices: PSBPricingMatrices;
   regionId: string;
@@ -245,23 +253,20 @@ export function CalculatorForm({
     if (config.premiumColor) {
       upg.push(`${config.premiumColor} ${config.premiumColorCoverage ?? ""}`.trim());
     }
-    s.upgrades = upg.join(" · ");
-
-    s.colorScrews = config.colorScrews ?? "";
-
-    s.gutter = config.gutterSide
-      ? [config.gutterSide, config.gutterColor].filter(Boolean).join(" · ")
-      : "";
-
-    const trim: string[] = [];
-    if (config.foamClosure) trim.push(config.foamClosure);
+    if (config.colorScrews) upg.push(config.colorScrews);
+    if (config.gutterSide) {
+      upg.push(
+        `Gutter ${[config.gutterSide, config.gutterColor].filter(Boolean).join(" ")}`.trim()
+      );
+    }
+    if (config.foamClosure) upg.push(config.foamClosure);
     if (config.extraSheetMetal && (config.extraSheetMetalQty ?? 0) > 0) {
-      trim.push(`${config.extraSheetMetalQty}× ${config.extraSheetMetal}`);
+      upg.push(`${config.extraSheetMetalQty}× ${config.extraSheetMetal}`);
     }
     if (config.jtrim && (config.jtrimQty ?? 0) > 0) {
-      trim.push(`${config.jtrimQty}× ${config.jtrim}`);
+      upg.push(`${config.jtrimQty}× ${config.jtrim}`);
     }
-    s.trim = trim.join(" · ");
+    s.upgrades = upg.join(" · ");
 
     s.labor = (config.laborFees ?? []).filter(Boolean).join(" · ");
 
@@ -848,6 +853,7 @@ export function CalculatorForm({
           defaultOpen={false}
           summary={summaries.upgrades}
         >
+            <SubHeading>Panel & Color</SubHeading>
             <div className="space-y-1">
               <Label className="text-xs">26ga Panel Upgrade</Label>
               <Select
@@ -908,15 +914,7 @@ export function CalculatorForm({
                 </SelectContent>
               </Select>
             </div>
-        </Section>
-
-        <Section
-          title="Color Screws"
-          contentClassName="grid grid-cols-1 gap-3"
-          defaultOpen={false}
-          summary={summaries.colorScrews}
-        >
-            <div className="space-y-1">
+            <div className="space-y-1 col-span-2">
               <Label className="text-xs">Color Screws</Label>
               <Select
                 value={config.colorScrews || NONE}
@@ -931,14 +929,8 @@ export function CalculatorForm({
                 </SelectContent>
               </Select>
             </div>
-        </Section>
 
-        <Section
-          title='6&quot; K-style Gutter'
-          contentClassName="grid grid-cols-2 gap-3"
-          defaultOpen={false}
-          summary={summaries.gutter}
-        >
+            <SubHeading>6&quot; K-style Gutter</SubHeading>
             <div className="space-y-1">
               <Label className="text-xs">Side</Label>
               <Select
@@ -970,14 +962,8 @@ export function CalculatorForm({
                 </SelectContent>
               </Select>
             </div>
-        </Section>
 
-        <Section
-          title="Trim & Closure"
-          contentClassName="grid grid-cols-2 gap-3"
-          defaultOpen={false}
-          summary={summaries.trim}
-        >
+            <SubHeading>Trim & Closure</SubHeading>
             <div className="space-y-1 col-span-2">
               <Label className="text-xs">Foam Closure</Label>
               <Select

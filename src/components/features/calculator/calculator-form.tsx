@@ -245,8 +245,9 @@ export function CalculatorForm({
     if (config.premiumColor) {
       upg.push(`${config.premiumColor} ${config.premiumColorCoverage ?? ""}`.trim());
     }
-    if (config.colorScrews) upg.push(config.colorScrews);
     s.upgrades = upg.join(" · ");
+
+    s.colorScrews = config.colorScrews ?? "";
 
     s.gutter = config.gutterSide
       ? [config.gutterSide, config.gutterColor].filter(Boolean).join(" · ")
@@ -907,7 +908,15 @@ export function CalculatorForm({
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-1 col-span-2">
+        </Section>
+
+        <Section
+          title="Color Screws"
+          contentClassName="grid grid-cols-1 gap-3"
+          defaultOpen={false}
+          summary={summaries.colorScrews}
+        >
+            <div className="space-y-1">
               <Label className="text-xs">Color Screws</Label>
               <Select
                 value={config.colorScrews || NONE}

@@ -23,6 +23,7 @@ import {
 } from "@/lib/pricing/constants";
 
 const NONE = "__none__";
+const WIND_MPH_OPTIONS = Array.from({ length: 181 }, (_, w) => w);
 
 function Section({
   title,
@@ -139,6 +140,12 @@ export function CalculatorForm({
 
   const handlePreview = async () => {
     setPreviewing(true);
+    const tab = window.open("", "_blank");
+    if (tab) {
+      tab.document.write(
+        "<title>Generating preview…</title><p style='font-family:sans-serif;padding:24px'>Generating preview…</p>"
+      );
+    }
     try {
       const res = await fetch("/api/quotes/preview", {
         method: "POST",
@@ -147,12 +154,22 @@ export function CalculatorForm({
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
+        tab?.close();
         alert(j.error ?? "Failed to generate preview");
         return;
       }
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
-      window.open(url, "_blank");
+      if (tab) {
+        tab.location.href = url;
+      } else {
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "quote-preview.pdf";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      }
       setTimeout(() => URL.revokeObjectURL(url), 60_000);
     } finally {
       setPreviewing(false);
@@ -1079,7 +1096,7 @@ export function CalculatorForm({
             >
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {Array.from({ length: 181 }, (_, w) => (
+                {WIND_MPH_OPTIONS.map((w) => (
                   <SelectItem key={w} value={String(w)}>{w}</SelectItem>
                 ))}
               </SelectContent>

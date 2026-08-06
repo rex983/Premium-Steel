@@ -18,6 +18,15 @@ export async function GET(
   const { searchParams } = new URL(req.url);
   const versionId = searchParams.get("versionId");
 
+  const { data: region } = await supabase
+    .from("psb_regions")
+    .select("is_active")
+    .eq("id", regionId)
+    .maybeSingle();
+  if (!region?.is_active) {
+    return NextResponse.json({ error: "Region not available" }, { status: 404 });
+  }
+
   let q = supabase
     .from("psb_pricing_data")
     .select("id, region_id, version, is_current, matrices, created_at")

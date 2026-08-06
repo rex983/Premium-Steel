@@ -5,6 +5,7 @@ import type { EngineOutput } from "@/lib/pricing/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 30;
 
 interface PreviewBody {
   result: EngineOutput;

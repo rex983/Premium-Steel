@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { QuotePdf } from "@/lib/pdf/quote-pdf";
 
 export const runtime = "nodejs";
+export const maxDuration = 30;
 
 export async function GET(
   _req: NextRequest,
@@ -19,7 +20,9 @@ export async function GET(
   const supabase = createAdminClient();
   const { data: quote, error } = await supabase
     .from("psb_quotes")
-    .select("*")
+    .select(
+      "quote_number, status, created_by, customer_name, customer_email, customer_phone, customer_address, customer_city, customer_state, customer_zip, pricing, valid_until, notes"
+    )
     .eq("id", id)
     .single();
 

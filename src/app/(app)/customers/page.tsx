@@ -41,7 +41,6 @@ export default function CustomersPage() {
     setLoading(false);
   };
 
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
   useEffect(() => {
     const t = setTimeout(load, 300);
     return () => clearTimeout(t);

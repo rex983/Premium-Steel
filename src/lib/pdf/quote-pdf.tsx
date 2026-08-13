@@ -1,30 +1,18 @@
+import fs from "fs";
+import path from "path";
 import {
-  Document, Page, View, Text, Svg, Path, StyleSheet,
+  Document, Page, View, Text, Image, StyleSheet,
 } from "@react-pdf/renderer";
 import type { EngineOutput } from "@/lib/pricing/types";
 
-function BrandMark({ size = 56 }: { size?: number }) {
-  return (
-    <Svg viewBox="0 0 512 512" width={size} height={size}>
-      <Text
-        x={256}
-        y={430}
-        textAnchor="middle"
-        fill="#f97316"
-        style={{ fontFamily: "Helvetica-Bold", fontSize: 520 }}
-      >
-        B
-      </Text>
-      <Path
-        fill="#1f2937"
-        stroke="#ffffff"
-        strokeWidth={10}
-        strokeLinejoin="round"
-        d="M507.73 109.1c-2.24-9.03-13.54-12.09-20.12-5.51l-74.36 74.36-67.88-11.31-11.31-67.88 74.36-74.36c6.62-6.62 3.43-17.9-5.66-20.16-47.38-11.74-99.55.91-136.58 37.93-39.64 39.64-50.55 97.1-34.05 147.2L18.74 402.76c-24.99 24.99-24.99 65.51 0 90.5 24.99 24.99 65.51 24.99 90.5 0l213.21-213.21c50.12 16.71 107.47 5.68 147.37-34.22 37.07-37.07 49.7-89.32 37.91-136.73z"
-      />
-    </Svg>
-  );
-}
+const logoDataUrl = (() => {
+  try {
+    const buf = fs.readFileSync(path.join(process.cwd(), "public", "logo.png"));
+    return `data:image/png;base64,${buf.toString("base64")}`;
+  } catch {
+    return null;
+  }
+})();
 
 interface QuotePdfProps {
   quoteNumber: string;
@@ -62,7 +50,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
   },
-  brandLogoWrap: { marginBottom: 4 },
+  brandLogo: { width: 130, height: 56, objectFit: "contain", marginBottom: 4 },
   brandTag: { fontSize: 9, color: "#555" },
   meta: { textAlign: "right", fontSize: 9 },
   metaRow: { flexDirection: "row", justifyContent: "flex-end", gap: 8 },
@@ -128,9 +116,11 @@ export function QuotePdf({ quoteNumber, status, customer, result, validUntil, no
       <Page size="LETTER" style={styles.page}>
         <View style={styles.header}>
           <View>
-            <View style={styles.brandLogoWrap}>
-              <BrandMark size={56} />
-            </View>
+            {logoDataUrl ? (
+              <Image src={logoDataUrl} style={styles.brandLogo} />
+            ) : (
+              <Text style={styles.brand}>Premium Steel Buildings</Text>
+            )}
             <Text style={styles.brandTag}>PO Box 24, Godley, TX 76044-9998</Text>
             <Text style={styles.brandTag}>844-387-7246 · orders@premiumsteelbuildings.com</Text>
           </View>

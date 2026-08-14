@@ -23,7 +23,7 @@ export function RegionPicker({ regions, selectedRegionId, onChange }: RegionPick
         <SelectContent>
           {regions.map((r) => (
             <SelectItem key={r.id} value={r.id}>
-              {r.name} — {r.states.join(", ")}
+              {r.display_name?.trim() || r.name} — {r.states.join(", ")}
             </SelectItem>
           ))}
         </SelectContent>

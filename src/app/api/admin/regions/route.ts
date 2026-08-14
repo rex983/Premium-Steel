@@ -49,7 +49,11 @@ export async function POST(req: NextRequest) {
   if (!guard.ok) return guard.res;
 
   const body = await req.json();
-  const { name, states } = body as { name: string; states: string[] };
+  const { name, display_name, states } = body as {
+    name: string;
+    display_name?: string | null;
+    states: string[];
+  };
 
   if (!name?.trim()) return NextResponse.json({ error: "Name is required" }, { status: 400 });
   if (!Array.isArray(states) || states.length === 0) {
@@ -65,7 +69,13 @@ export async function POST(req: NextRequest) {
 
   const { data, error } = await supabase
     .from("psb_regions")
-    .insert({ name: name.trim(), slug, states, is_active: true })
+    .insert({
+      name: name.trim(),
+      display_name: display_name?.trim() || null,
+      slug,
+      states,
+      is_active: true,
+    })
     .select()
     .single();
 
@@ -81,7 +91,7 @@ export async function POST(req: NextRequest) {
     action: "region.create",
     entity: "psb_regions",
     entityId: data.id,
-    diff: { name: data.name, states: data.states },
+    diff: { name: data.name, display_name: data.display_name, states: data.states },
   });
 
   return NextResponse.json({ region: data });

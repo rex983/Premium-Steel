@@ -19,6 +19,7 @@ import { formatDate } from "@/lib/utils";
 interface Region {
   id: string;
   name: string;
+  display_name: string | null;
   slug: string;
   states: string[];
   is_active: boolean;
@@ -81,8 +82,13 @@ export default function RegionsPage() {
                     className="flex items-start justify-between border rounded-md p-3 gap-3"
                   >
                     <div className="space-y-1 min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-medium">{r.name}</span>
+                        {r.display_name?.trim() && (
+                          <span className="text-xs text-muted-foreground">
+                            (reps see: <span className="italic">{r.display_name}</span>)
+                          </span>
+                        )}
                         <Badge variant={r.is_active ? "default" : "secondary"}>
                           {r.is_active ? "active" : "inactive"}
                         </Badge>
@@ -145,12 +151,14 @@ function RegionDialog({
   onSaved: () => void;
 }) {
   const [name, setName] = useState(region?.name ?? "");
+  const [displayName, setDisplayName] = useState(region?.display_name ?? "");
   const [statesText, setStatesText] = useState((region?.states ?? []).join(", "));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setName(region?.name ?? "");
+    setDisplayName(region?.display_name ?? "");
     setStatesText((region?.states ?? []).join(", "));
     setError(null);
   }, [region, open]);
@@ -160,7 +168,7 @@ function RegionDialog({
     setSaving(true);
     setError(null);
     const states = statesText.split(/[,\s]+/).map((s) => s.trim().toUpperCase()).filter(Boolean);
-    const body = { name, states };
+    const body = { name, display_name: displayName, states };
     const url = region ? `/api/admin/regions/${region.id}` : "/api/admin/regions";
     const method = region ? "PATCH" : "POST";
     const res = await fetch(url, {
@@ -184,8 +192,22 @@ function RegionDialog({
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-3">
           <div className="space-y-1">
-            <Label className="text-xs">Name</Label>
+            <Label className="text-xs">Internal Name</Label>
             <Input value={name} onChange={(e) => setName(e.target.value)} required />
+            <p className="text-[11px] text-muted-foreground">
+              Used for admin, uploads, and matching workbook to region. Not shown to sales reps.
+            </p>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Display Name (sales-rep facing)</Label>
+            <Input
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              placeholder={name || "e.g. Zone A"}
+            />
+            <p className="text-[11px] text-muted-foreground">
+              What reps see in the calculator region picker. Leave blank to use the internal name.
+            </p>
           </div>
           <div className="space-y-1">
             <Label className="text-xs">States (2-letter codes, comma or space separated)</Label>

@@ -10,7 +10,7 @@ export async function GET() {
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("psb_regions")
-    .select("id, name, slug, states, is_active")
+    .select("id, name, display_name, slug, states, is_active")
     .eq("is_active", true)
     .order("name");
   if (error) {

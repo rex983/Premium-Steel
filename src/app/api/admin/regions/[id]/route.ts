@@ -22,6 +22,10 @@ export async function PATCH(
   const update: Record<string, unknown> = {};
 
   if (typeof body.name === "string" && body.name.trim()) update.name = body.name.trim();
+  if ("display_name" in body) {
+    const dn = typeof body.display_name === "string" ? body.display_name.trim() : "";
+    update.display_name = dn || null;
+  }
   if (Array.isArray(body.states)) {
     const invalid = body.states.filter((s: string) => !VALID_STATES.has(s));
     if (invalid.length > 0) {

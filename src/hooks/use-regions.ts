@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 export interface Region {
   id: string;
   name: string;
+  display_name: string | null;
   slug: string;
   states: string[];
   is_active: boolean;

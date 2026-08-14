@@ -4,6 +4,36 @@ import { logAudit } from "@/lib/audit";
 import { requireAdmin } from "@/lib/admin-guard";
 import { VALID_STATES } from "@/lib/us-states";
 
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: Promise<{ code: string }> }
+) {
+  const guard = await requireAdmin();
+  if (!guard.ok) return guard.res;
+
+  const { code } = await params;
+  if (!VALID_STATES.has(code)) {
+    return NextResponse.json({ error: "Invalid state code" }, { status: 400 });
+  }
+
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from("psb_state_defaults")
+    .delete()
+    .eq("state_code", code);
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  await logAudit({
+    actorEmail: guard.email,
+    action: "state_default.delete",
+    entity: "psb_state_defaults",
+    entityId: code,
+  });
+
+  return NextResponse.json({ ok: true });
+}
+
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ code: string }> }

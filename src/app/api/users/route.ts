@@ -9,6 +9,7 @@ const createSchema = z.object({
   name: z.string().optional(),
   role: z.string().min(1).default("sales_rep"),
   office: z.enum(["Harbor", "Marion", "BST", "RnD"]).nullable().optional(),
+  department: z.enum(["SALES TEAM", "BST", "RnD"]).nullable().optional(),
   is_it: z.boolean().optional(),
 });
 
@@ -20,7 +21,7 @@ export async function GET() {
   // Shared profiles table stores full_name; alias to `name` for the UI.
   const { data: users, error } = await supabase
     .from("profiles")
-    .select("id, email, name:full_name, role, office, is_it, created_at, updated_at")
+    .select("id, email, name:full_name, role, office, department, is_it, created_at, updated_at")
     .order("email");
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -37,7 +38,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { email, name, role, office, is_it } = parsed.data;
+  const { email, name, role, office, department, is_it } = parsed.data;
   const supabase = createAdminClient();
 
   // No FK to auth.users on shared profiles.id — launcher-style direct insert.
@@ -50,10 +51,11 @@ export async function POST(req: NextRequest) {
       full_name: name ?? null,
       role,
       office: office ?? null,
+      department: department ?? null,
       is_it: is_it ?? false,
       approved: true,
     })
-    .select("id, email, name:full_name, role, office, is_it, created_at, updated_at")
+    .select("id, email, name:full_name, role, office, department, is_it, created_at, updated_at")
     .single();
 
   if (error) {
@@ -71,7 +73,7 @@ export async function POST(req: NextRequest) {
     action: "user.create",
     entity: "profiles",
     entityId: profile.id,
-    diff: { email, role, office, is_it: is_it ?? false },
+    diff: { email, role, office, department, is_it: is_it ?? false },
   });
 
   return NextResponse.json(profile, { status: 201 });

@@ -3,7 +3,7 @@ import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { verifyLauncherSsoToken } from "@/lib/sso/verifier";
-import type { UserRole, Office } from "@/types/auth";
+import type { UserRole, Office, Department } from "@/types/auth";
 
 const providers = [];
 
@@ -114,7 +114,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           const supabase = createAdminClient();
           const { data: profile } = await supabase
             .from("profiles")
-            .select("id, role, office")
+            .select("id, role, office, department")
             .eq("email", user.email)
             .single();
 
@@ -122,6 +122,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             token.role = profile.role as UserRole;
             token.profileId = profile.id;
             if (profile.office) token.office = profile.office as Office;
+            token.department = (profile.department ?? null) as Department | null;
           } else {
             token.role = "viewer" as UserRole;
           }
@@ -136,6 +137,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session.user.role = token.role as UserRole;
         session.user.profileId = token.profileId as string;
         if (token.office) session.user.office = token.office as Office;
+        session.user.department = (token.department ?? null) as Department | null;
       }
       return session;
     },

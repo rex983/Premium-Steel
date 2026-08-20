@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { validProfileId } from "@/lib/validators";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -37,9 +38,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Name required" }, { status: 400 });
   }
 
-  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  const profileId = session.user.profileId;
-  const validUuid = profileId && UUID_RE.test(profileId) ? profileId : null;
+  const validUuid = validProfileId(session.user.profileId);
 
   const supabase = createAdminClient();
   const { data, error } = await supabase

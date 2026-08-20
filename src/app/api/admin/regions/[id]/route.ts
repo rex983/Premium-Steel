@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAudit } from "@/lib/audit";
 import { requireAdmin } from "@/lib/admin-guard";
+import { isValidOffice } from "@/lib/region-access";
 
 const VALID_STATES = new Set([
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN",
@@ -33,6 +34,13 @@ export async function PATCH(
     }
     update.states = body.states;
     update.slug = body.states.join("-").toLowerCase();
+  }
+  if (Array.isArray(body.offices)) {
+    const invalidOffices = body.offices.filter((o: unknown) => !isValidOffice(o));
+    if (invalidOffices.length > 0) {
+      return NextResponse.json({ error: `Invalid offices: ${invalidOffices.join(", ")}` }, { status: 400 });
+    }
+    update.offices = Array.from(new Set(body.offices as string[]));
   }
   if (typeof body.is_active === "boolean") update.is_active = body.is_active;
 

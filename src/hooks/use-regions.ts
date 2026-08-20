@@ -9,6 +9,7 @@ export interface Region {
   slug: string;
   states: string[];
   is_active: boolean;
+  offices: string[];
 }
 
 export function useRegions() {

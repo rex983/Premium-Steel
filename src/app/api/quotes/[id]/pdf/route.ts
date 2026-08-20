@@ -3,6 +3,7 @@ import { renderToBuffer } from "@react-pdf/renderer";
 import { auth } from "@/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { QuotePdf } from "@/lib/pdf/quote-pdf";
+import { canAccessRegion } from "@/lib/region-access";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -21,7 +22,7 @@ export async function GET(
   const { data: quote, error } = await supabase
     .from("psb_quotes")
     .select(
-      "quote_number, status, created_by, customer_name, customer_email, customer_phone, customer_address, customer_city, customer_state, customer_zip, pricing, valid_until, notes"
+      "quote_number, status, created_by, customer_name, customer_email, customer_phone, customer_address, customer_city, customer_state, customer_zip, pricing, valid_until, notes, region:psb_regions(offices)"
     )
     .eq("id", id)
     .single();
@@ -30,7 +31,11 @@ export async function GET(
     return NextResponse.json({ error: "Quote not found" }, { status: 404 });
   }
 
-  const { role, profileId } = session.user;
+  const { role, profileId, office } = session.user;
+  const regionOffices = (quote.region as { offices?: string[] } | null)?.offices;
+  if (!canAccessRegion(role, office, regionOffices)) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
   if ((role === "sales_rep" || role === "viewer") && quote.created_by !== profileId) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }

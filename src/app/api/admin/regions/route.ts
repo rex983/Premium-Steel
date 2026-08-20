@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { logAudit } from "@/lib/audit";
 import { requireAdmin } from "@/lib/admin-guard";
 import { VALID_STATES } from "@/lib/us-states";
+import { isValidOffice } from "@/lib/region-access";
 
 /** GET — list all regions (active + inactive) with current pricing version + last upload */
 export async function GET() {
@@ -49,10 +50,11 @@ export async function POST(req: NextRequest) {
   if (!guard.ok) return guard.res;
 
   const body = await req.json();
-  const { name, display_name, states } = body as {
+  const { name, display_name, states, offices } = body as {
     name: string;
     display_name?: string | null;
     states: string[];
+    offices?: string[];
   };
 
   if (!name?.trim()) return NextResponse.json({ error: "Name is required" }, { status: 400 });
@@ -64,6 +66,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `Invalid state codes: ${invalid.join(", ")}` }, { status: 400 });
   }
 
+  const officesInput = Array.isArray(offices) ? offices : [];
+  const invalidOffices = officesInput.filter((o) => !isValidOffice(o));
+  if (invalidOffices.length > 0) {
+    return NextResponse.json({ error: `Invalid offices: ${invalidOffices.join(", ")}` }, { status: 400 });
+  }
+  const officesClean = Array.from(new Set(officesInput));
+
   const slug = states.join("-").toLowerCase();
   const supabase = createAdminClient();
 
@@ -74,6 +83,7 @@ export async function POST(req: NextRequest) {
       display_name: display_name?.trim() || null,
       slug,
       states,
+      offices: officesClean,
       is_active: true,
     })
     .select()
@@ -91,7 +101,7 @@ export async function POST(req: NextRequest) {
     action: "region.create",
     entity: "psb_regions",
     entityId: data.id,
-    diff: { name: data.name, display_name: data.display_name, states: data.states },
+    diff: { name: data.name, display_name: data.display_name, states: data.states, offices: data.offices },
   });
 
   return NextResponse.json({ region: data });

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { canAccessRegion } from "@/lib/region-access";
 
 export const dynamic = "force-dynamic";
 
@@ -20,10 +21,13 @@ export async function GET(
 
   const { data: region } = await supabase
     .from("psb_regions")
-    .select("is_active")
+    .select("is_active, offices")
     .eq("id", regionId)
     .maybeSingle();
   if (!region?.is_active) {
+    return NextResponse.json({ error: "Region not available" }, { status: 404 });
+  }
+  if (!canAccessRegion(session.user.role, session.user.office, region.offices)) {
     return NextResponse.json({ error: "Region not available" }, { status: 404 });
   }
 

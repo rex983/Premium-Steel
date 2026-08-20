@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { canAccessRegion } from "@/lib/region-access";
 
 const ALLOWED_PATCH_FIELDS = [
   "status",
@@ -22,7 +23,7 @@ export async function GET(
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("psb_quotes")
-    .select("*")
+    .select("*, region:psb_regions(offices)")
     .eq("id", id)
     .single();
 
@@ -30,12 +31,18 @@ export async function GET(
     return NextResponse.json({ error: "Quote not found" }, { status: 404 });
   }
 
-  const { role, profileId } = session.user;
+  const { role, profileId, office } = session.user;
+  const regionOffices = (data.region as { offices?: string[] } | null)?.offices;
+  if (!canAccessRegion(role, office, regionOffices)) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
   if ((role === "sales_rep" || role === "viewer") && data.created_by !== profileId) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  return NextResponse.json({ quote: data });
+  const { region: _region, ...quote } = data as { region?: unknown } & Record<string, unknown>;
+  void _region;
+  return NextResponse.json({ quote });
 }
 
 export async function PATCH(
@@ -50,14 +57,18 @@ export async function PATCH(
 
   const { data: existing } = await supabase
     .from("psb_quotes")
-    .select("id, created_by")
+    .select("id, created_by, region:psb_regions(offices)")
     .eq("id", id)
     .single();
   if (!existing) {
     return NextResponse.json({ error: "Quote not found" }, { status: 404 });
   }
 
-  const { role, profileId } = session.user;
+  const { role, profileId, office } = session.user;
+  const regionOffices = (existing.region as { offices?: string[] } | null)?.offices;
+  if (!canAccessRegion(role, office, regionOffices)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
   if (role === "viewer") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   if (role === "sales_rep" && existing.created_by !== profileId) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -99,12 +110,16 @@ export async function DELETE(
   const supabase = createAdminClient();
   const { data: existing } = await supabase
     .from("psb_quotes")
-    .select("id, created_by")
+    .select("id, created_by, region:psb_regions(offices)")
     .eq("id", id)
     .single();
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const { role, profileId } = session.user;
+  const { role, profileId, office } = session.user;
+  const regionOffices = (existing.region as { offices?: string[] } | null)?.offices;
+  if (!canAccessRegion(role, office, regionOffices)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
   if (role === "viewer") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   if (role === "sales_rep" && existing.created_by !== profileId) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });

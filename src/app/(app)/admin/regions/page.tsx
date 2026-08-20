@@ -22,11 +22,19 @@ interface Region {
   display_name: string | null;
   slug: string;
   states: string[];
+  offices: string[];
   is_active: boolean;
   created_at: string;
   currentPricing: { version: number; uploadedAt: string } | null;
   lastUpload: { filename: string; uploadedAt: string } | null;
 }
+
+const OFFICE_OPTIONS: { value: string; label: string }[] = [
+  { value: "Harbor", label: "Harbor" },
+  { value: "Marion", label: "Marion" },
+  { value: "BST", label: "BST" },
+  { value: "RnD", label: "R&D" },
+];
 
 export default function RegionsPage() {
   const [regions, setRegions] = useState<Region[]>([]);
@@ -98,6 +106,16 @@ export default function RegionsPage() {
                           <Badge key={s} variant="outline" className="text-[10px]">{s}</Badge>
                         ))}
                       </div>
+                      <div className="text-xs text-muted-foreground flex items-center gap-1 flex-wrap">
+                        <span>Offices:</span>
+                        {r.offices.length === 0 ? (
+                          <span className="italic">admin-only</span>
+                        ) : (
+                          r.offices.map((o) => (
+                            <Badge key={o} variant="secondary" className="text-[10px]">{o}</Badge>
+                          ))
+                        )}
+                      </div>
                       <div className="text-xs text-muted-foreground">
                         {r.currentPricing
                           ? `v${r.currentPricing.version} active · uploaded ${formatDate(r.currentPricing.uploadedAt)}`
@@ -153,6 +171,7 @@ function RegionDialog({
   const [name, setName] = useState(region?.name ?? "");
   const [displayName, setDisplayName] = useState(region?.display_name ?? "");
   const [statesText, setStatesText] = useState((region?.states ?? []).join(", "));
+  const [offices, setOffices] = useState<string[]>(region?.offices ?? []);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -160,15 +179,22 @@ function RegionDialog({
     setName(region?.name ?? "");
     setDisplayName(region?.display_name ?? "");
     setStatesText((region?.states ?? []).join(", "));
+    setOffices(region?.offices ?? []);
     setError(null);
   }, [region, open]);
+
+  const toggleOffice = (value: string) => {
+    setOffices((prev) =>
+      prev.includes(value) ? prev.filter((o) => o !== value) : [...prev, value]
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     setError(null);
     const states = statesText.split(/[,\s]+/).map((s) => s.trim().toUpperCase()).filter(Boolean);
-    const body = { name, display_name: displayName, states };
+    const body = { name, display_name: displayName, states, offices };
     const url = region ? `/api/admin/regions/${region.id}` : "/api/admin/regions";
     const method = region ? "PATCH" : "POST";
     const res = await fetch(url, {
@@ -217,6 +243,28 @@ function RegionDialog({
               placeholder="IN, OH, KY, IL, TN, MO, WV"
               required
             />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Offices that can view + use this region</Label>
+            <div className="flex flex-wrap gap-3 pt-1">
+              {OFFICE_OPTIONS.map((opt) => (
+                <label
+                  key={opt.value}
+                  className="flex items-center gap-2 text-sm cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    checked={offices.includes(opt.value)}
+                    onChange={() => toggleOffice(opt.value)}
+                    className="h-4 w-4"
+                  />
+                  {opt.label}
+                </label>
+              ))}
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Leave all unchecked to keep this region admin-only. Admins always see every region.
+            </p>
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
           <DialogFooter>

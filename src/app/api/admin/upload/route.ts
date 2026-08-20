@@ -3,8 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { parsePsbWorkbook } from "@/lib/excel/parser";
 import { logAudit } from "@/lib/audit";
 import { requireAdmin } from "@/lib/admin-guard";
-
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+import { isUuid, validProfileId } from "@/lib/validators";
 
 export const runtime = "nodejs";
 
@@ -17,7 +16,7 @@ export async function POST(req: NextRequest) {
   const regionId = form.get("regionId") as string | null;
 
   if (!file) return NextResponse.json({ error: "No file" }, { status: 400 });
-  if (!regionId || !UUID_RE.test(regionId)) {
+  if (!regionId || !isUuid(regionId)) {
     return NextResponse.json({ error: "Invalid region ID" }, { status: 400 });
   }
 
@@ -30,8 +29,7 @@ export async function POST(req: NextRequest) {
   }
 
   const supabase = createAdminClient();
-  const profileId = guard.profileId;
-  const validUuid = profileId && UUID_RE.test(profileId) ? profileId : null;
+  const validUuid = validProfileId(guard.profileId);
 
   // Fetch target region
   const { data: region, error: regError } = await supabase

@@ -4,8 +4,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { priceBuilding } from "@/lib/pricing/engine";
 import type { BuildingConfig } from "@/lib/pricing/types";
 import type { PSBPricingMatrices } from "@/types/pricing";
-
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+import { isUuid, validProfileId } from "@/lib/validators";
+import { accessibleRegionIds, canSessionAccessRegionId } from "@/lib/region-access";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -14,10 +14,15 @@ export async function GET(req: NextRequest) {
   }
 
   const supabase = createAdminClient();
-  const { role, profileId } = session.user;
+  const { role, profileId, office } = session.user;
   const url = req.nextUrl;
   const status = url.searchParams.get("status");
   const search = url.searchParams.get("search");
+
+  const regionScope = await accessibleRegionIds(role, office);
+  if (regionScope !== "all" && regionScope.length === 0) {
+    return NextResponse.json({ quotes: [] });
+  }
 
   let query = supabase
     .from("psb_quotes")
@@ -26,6 +31,10 @@ export async function GET(req: NextRequest) {
     )
     .order("created_at", { ascending: false })
     .limit(200);
+
+  if (regionScope !== "all") {
+    query = query.in("region_id", regionScope);
+  }
 
   if (role === "sales_rep" || role === "viewer") {
     query = query.eq("created_by", profileId);
@@ -76,8 +85,12 @@ export async function POST(req: NextRequest) {
   if (!regionId || !config) {
     return NextResponse.json({ error: "regionId and config are required" }, { status: 400 });
   }
-  if (!UUID_RE.test(regionId)) {
+  if (!isUuid(regionId)) {
     return NextResponse.json({ error: "Invalid region ID" }, { status: 400 });
+  }
+
+  if (!(await canSessionAccessRegionId(session.user.role, session.user.office, regionId))) {
+    return NextResponse.json({ error: "Region not available" }, { status: 403 });
   }
 
   // Bound checks
@@ -115,9 +128,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `Pricing failed: ${msg}` }, { status: 500 });
   }
 
-  // Generate quote number
-  const profileId = session.user.profileId;
-  const validUuid = profileId && UUID_RE.test(profileId) ? profileId : null;
+  const validUuid = validProfileId(session.user.profileId);
 
   const { data: quoteNum, error: qnErr } = await supabase.rpc("next_psb_quote_number");
   if (qnErr) {
@@ -132,12 +143,18 @@ export async function POST(req: NextRequest) {
   let customerSnapshot = customer ?? {};
 
   if (resolvedCustomerId) {
-    const { data: cust } = await supabase
+    if (!isUuid(resolvedCustomerId)) {
+      return NextResponse.json({ error: "Invalid customer ID" }, { status: 400 });
+    }
+    const { data: cust, error: custFetchErr } = await supabase
       .from("psb_customers")
       .select("name, email, phone, address, city, state, zip")
       .eq("id", resolvedCustomerId)
       .single();
-    if (cust) customerSnapshot = cust;
+    if (custFetchErr || !cust) {
+      return NextResponse.json({ error: "Customer not found" }, { status: 404 });
+    }
+    customerSnapshot = cust;
   } else if (customer?.name) {
     const { data: newCust, error: custErr } = await supabase
       .from("psb_customers")
@@ -153,8 +170,11 @@ export async function POST(req: NextRequest) {
       })
       .select("id")
       .single();
-    if (custErr) console.error("Auto-create customer error:", custErr.message);
-    if (newCust) resolvedCustomerId = newCust.id;
+    if (custErr || !newCust) {
+      console.error("Auto-create customer error:", custErr?.message);
+    } else {
+      resolvedCustomerId = newCust.id;
+    }
   }
 
   const { data: quote, error: insertError } = await supabase

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { getActiveIdentity } from "@/lib/session/active-identity";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { canAccessRegion } from "@/lib/region-access";
 
@@ -16,8 +16,8 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const identity = await getActiveIdentity();
+  if (!identity) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
   const supabase = createAdminClient();
@@ -31,7 +31,7 @@ export async function GET(
     return NextResponse.json({ error: "Quote not found" }, { status: 404 });
   }
 
-  const { role, profileId, office } = session.user;
+  const { role, profileId, office } = identity;
   const regionOffices = (data.region as { offices?: string[] } | null)?.offices;
   if (!canAccessRegion(role, office, regionOffices)) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -49,8 +49,8 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const identity = await getActiveIdentity();
+  if (!identity) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
   const supabase = createAdminClient();
@@ -64,7 +64,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Quote not found" }, { status: 404 });
   }
 
-  const { role, profileId, office } = session.user;
+  const { role, profileId, office } = identity;
   const regionOffices = (existing.region as { offices?: string[] } | null)?.offices;
   if (!canAccessRegion(role, office, regionOffices)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -103,8 +103,8 @@ export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const identity = await getActiveIdentity();
+  if (!identity) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
   const supabase = createAdminClient();
@@ -115,7 +115,7 @@ export async function DELETE(
     .single();
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const { role, profileId, office } = session.user;
+  const { role, profileId, office } = identity;
   const regionOffices = (existing.region as { offices?: string[] } | null)?.offices;
   if (!canAccessRegion(role, office, regionOffices)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });

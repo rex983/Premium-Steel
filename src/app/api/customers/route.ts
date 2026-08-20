@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { getActiveIdentity } from "@/lib/session/active-identity";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { validProfileId } from "@/lib/validators";
 
 export async function GET(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const identity = await getActiveIdentity();
+  if (!identity) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const supabase = createAdminClient();
   const search = req.nextUrl.searchParams.get("search");
@@ -29,8 +29,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const identity = await getActiveIdentity();
+  if (!identity) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
   const { name, email, phone, address, city, state, zip, notes } = body as Record<string, string>;
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Name required" }, { status: 400 });
   }
 
-  const validUuid = validProfileId(session.user.profileId);
+  const validUuid = validProfileId(identity.profileId);
 
   const supabase = createAdminClient();
   const { data, error } = await supabase

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { renderToBuffer } from "@react-pdf/renderer";
-import { auth } from "@/auth";
+import { getActiveIdentity } from "@/lib/session/active-identity";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { QuotePdf } from "@/lib/pdf/quote-pdf";
 import { canAccessRegion } from "@/lib/region-access";
@@ -12,8 +12,8 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth();
-  if (!session?.user) {
+  const identity = await getActiveIdentity();
+  if (!identity) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -31,7 +31,7 @@ export async function GET(
     return NextResponse.json({ error: "Quote not found" }, { status: 404 });
   }
 
-  const { role, profileId, office } = session.user;
+  const { role, profileId, office } = identity;
   const regionOffices = (quote.region as { offices?: string[] } | null)?.offices;
   if (!canAccessRegion(role, office, regionOffices)) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { getActiveIdentity } from "@/lib/session/active-identity";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { priceBuilding } from "@/lib/pricing/engine";
 import type { BuildingConfig } from "@/lib/pricing/types";
@@ -8,13 +8,13 @@ import { isUuid, validProfileId } from "@/lib/validators";
 import { accessibleRegionIds, canSessionAccessRegionId } from "@/lib/region-access";
 
 export async function GET(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user) {
+  const identity = await getActiveIdentity();
+  if (!identity) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const supabase = createAdminClient();
-  const { role, profileId, office } = session.user;
+  const { role, profileId, office } = identity;
   const url = req.nextUrl;
   const status = url.searchParams.get("status");
   const search = url.searchParams.get("search");
@@ -59,8 +59,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user) {
+  const identity = await getActiveIdentity();
+  if (!identity) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid region ID" }, { status: 400 });
   }
 
-  if (!(await canSessionAccessRegionId(session.user.role, session.user.office, regionId))) {
+  if (!(await canSessionAccessRegionId(identity.role, identity.office, regionId))) {
     return NextResponse.json({ error: "Region not available" }, { status: 403 });
   }
 
@@ -128,7 +128,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `Pricing failed: ${msg}` }, { status: 500 });
   }
 
-  const validUuid = validProfileId(session.user.profileId);
+  const validUuid = validProfileId(identity.profileId);
 
   const { data: quoteNum, error: qnErr } = await supabase.rpc("next_psb_quote_number");
   if (qnErr) {

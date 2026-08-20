@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { getActiveIdentity } from "@/lib/session/active-identity";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { canAccessRegion } from "@/lib/region-access";
 
@@ -9,8 +9,8 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ regionId: string }> }
 ) {
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const identity = await getActiveIdentity();
+  if (!identity) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { regionId } = await params;
   if (!regionId.match(/^[0-9a-f-]{36}$/)) {
     return NextResponse.json({ error: "Invalid region id" }, { status: 400 });
@@ -27,7 +27,7 @@ export async function GET(
   if (!region?.is_active) {
     return NextResponse.json({ error: "Region not available" }, { status: 404 });
   }
-  if (!canAccessRegion(session.user.role, session.user.office, region.offices)) {
+  if (!canAccessRegion(identity.role, identity.office, region.offices)) {
     return NextResponse.json({ error: "Region not available" }, { status: 404 });
   }
 

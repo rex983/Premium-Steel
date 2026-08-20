@@ -29,7 +29,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye } from "lucide-react";
 import type { Department, Office, UserProfile, UserRole } from "@/types/auth";
 
 interface LauncherRole {
@@ -183,6 +183,28 @@ export default function AdminUsersPage() {
       return;
     }
     fetchUsers();
+  };
+
+  const handleImpersonate = async (user: UserProfile) => {
+    if (
+      !confirm(
+        `View the app as ${user.email}?\n\n` +
+          `You will see exactly what they see (regions, quotes, permissions) and any changes you make will be attributed to them until you exit.`
+      )
+    ) {
+      return;
+    }
+    const res = await fetch("/api/admin/impersonate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ profileId: user.id }),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      alert(body.error || "Failed to view as user");
+      return;
+    }
+    window.location.href = "/calculator";
   };
 
   return (
@@ -385,6 +407,15 @@ export default function AdminUsersPage() {
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        disabled={isSelf}
+                        title={isSelf ? "You cannot view as yourself" : "View as this user"}
+                        onClick={() => handleImpersonate(user)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="icon"

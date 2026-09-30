@@ -61,7 +61,8 @@ const emptyForm: FormState = {
 // Fallback role list in case /api/roles fails (e.g., launcher_roles not seeded).
 const fallbackRoles: LauncherRole[] = [
   { name: "admin", display_name: "Admin" },
-  { name: "manager", display_name: "Manager" },
+  { name: "senior_manager", display_name: "Senior Manager" },
+  { name: "junior_manager", display_name: "Junior Manager" },
   { name: "sales_rep", display_name: "Sales Rep" },
   { name: "viewer", display_name: "Viewer" },
 ];

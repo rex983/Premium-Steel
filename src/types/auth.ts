@@ -12,7 +12,7 @@ export type UserRole =
   | "bst"
   | "rnd";
 // Matches the launcher's shared profiles.office column.
-export type Office = "Harbor" | "Marion" | "BST" | "RnD";
+export type Office = "Harbor" | "BST" | "RnD";
 // Matches the launcher's shared profiles.department column.
 export type Department = "SALES TEAM" | "BST" | "RnD";
 

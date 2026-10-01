@@ -8,7 +8,7 @@ const createSchema = z.object({
   email: z.string().email().transform((e) => e.toLowerCase()),
   name: z.string().optional(),
   role: z.string().min(1).default("sales_rep"),
-  office: z.enum(["Harbor", "Marion", "BST", "RnD"]).nullable().optional(),
+  office: z.enum(["Harbor", "BST", "RnD"]).nullable().optional(),
   department: z.enum(["SALES TEAM", "BST", "RnD"]).nullable().optional(),
   is_it: z.boolean().optional(),
 });

@@ -1,7 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { UserRole, Office } from "@/types/auth";
 
-export const VALID_OFFICES: Office[] = ["Harbor", "BST", "RnD"];
+export const VALID_OFFICES: Office[] = ["Sales", "BST", "RnD"];
 const VALID_OFFICE_SET = new Set<string>(VALID_OFFICES);
 
 export function isValidOffice(value: unknown): value is Office {

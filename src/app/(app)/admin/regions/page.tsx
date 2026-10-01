@@ -30,7 +30,7 @@ interface Region {
 }
 
 const OFFICE_OPTIONS: { value: string; label: string }[] = [
-  { value: "Harbor", label: "Harbor" },
+  { value: "Sales", label: "Sales" },
   { value: "BST", label: "BST" },
   { value: "RnD", label: "R&D" },
 ];

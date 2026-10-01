@@ -37,7 +37,7 @@ interface LauncherRole {
   display_name: string;
 }
 
-const allOffices: Office[] = ["Harbor", "BST", "RnD"];
+const allOffices: Office[] = ["Sales", "BST", "RnD"];
 const allDepartments: Department[] = ["SALES TEAM", "BST", "RnD"];
 
 type FormState = {

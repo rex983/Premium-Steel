@@ -7,7 +7,7 @@ import { logAudit } from "@/lib/audit";
 const updateSchema = z.object({
   name: z.string().nullable().optional(),
   role: z.string().min(1).optional(),
-  office: z.enum(["Harbor", "BST", "RnD"]).nullable().optional(),
+  office: z.enum(["Sales", "BST", "RnD"]).nullable().optional(),
   department: z.enum(["SALES TEAM", "BST", "RnD"]).nullable().optional(),
   is_it: z.boolean().optional(),
 });

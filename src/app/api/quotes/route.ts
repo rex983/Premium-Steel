@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getActiveIdentity } from "@/lib/session/active-identity";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getCurrentPricingData } from "@/lib/pricing-data-cache";
 import { priceBuilding } from "@/lib/pricing/engine";
 import type { BuildingConfig } from "@/lib/pricing/types";
 import type { PSBPricingMatrices } from "@/types/pricing";
@@ -107,12 +108,7 @@ export async function POST(req: NextRequest) {
   const supabase = createAdminClient();
 
   // Fetch current pricing snapshot
-  const { data: pricingRow } = await supabase
-    .from("psb_pricing_data")
-    .select("id, matrices")
-    .eq("region_id", regionId)
-    .eq("is_current", true)
-    .single();
+  const pricingRow = await getCurrentPricingData(regionId).catch(() => null);
 
   if (!pricingRow) {
     return NextResponse.json({ error: "No pricing data for this region" }, { status: 400 });

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAudit } from "@/lib/audit";
 import { requireAdmin } from "@/lib/admin-guard";
+import { invalidatePricingDataCache } from "@/lib/pricing-data-cache";
 import { isValidOffice } from "@/lib/region-access";
 
 const VALID_STATES = new Set([
@@ -81,6 +82,8 @@ export async function DELETE(
 
   const { error } = await supabase.from("psb_regions").delete().eq("id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  // ON DELETE CASCADE removes the region's pricing rows too.
+  invalidatePricingDataCache();
 
   await logAudit({
     actorEmail: guard.email,

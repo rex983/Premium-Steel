@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/admin-guard";
+import {
+  displayName,
+  getLauncherDepartments,
+  getLauncherOffices,
+  getLauncherRoles,
+} from "@/lib/launcher/org";
 
 // Users, roles, offices and departments are managed only in the BBD Launcher
 // (Admin → Users). PSB lists them read-only.
@@ -16,5 +22,19 @@ export async function GET() {
     .order("email");
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(users || []);
+
+  // Labels come from the launcher's role / office / department tables.
+  const [roles, offices, departments] = await Promise.all([
+    getLauncherRoles(),
+    getLauncherOffices(),
+    getLauncherDepartments(),
+  ]);
+  return NextResponse.json(
+    (users || []).map((u) => ({
+      ...u,
+      role_label: displayName(roles, u.role),
+      office_label: displayName(offices, u.office),
+      department_label: displayName(departments, u.department),
+    })),
+  );
 }

@@ -14,11 +14,17 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { ExternalLink } from "lucide-react";
 import type { UserProfile } from "@/types/auth";
+
+type UserRow = UserProfile & {
+  role_label?: string;
+  office_label?: string;
+  department_label?: string;
+};
 import { LAUNCHER_URL } from "@/lib/launcher/url";
 
 
 export default function AdminUsersPage() {
-  const [users, setUsers] = useState<UserProfile[]>([]);
+  const [users, setUsers] = useState<UserRow[]>([]);
 
   useEffect(() => {
     fetch("/api/users")
@@ -63,21 +69,21 @@ export default function AdminUsersPage() {
                 <TableCell>{user.email}</TableCell>
                 <TableCell>
                   {user.office ? (
-                    <Badge variant="outline">{user.office}</Badge>
+                    <Badge variant="outline">{user.office_label || user.office}</Badge>
                   ) : (
                     <span className="text-muted-foreground">—</span>
                   )}
                 </TableCell>
                 <TableCell>
                   {user.department ? (
-                    <Badge variant="outline">{user.department}</Badge>
+                    <Badge variant="outline">{user.department_label || user.department}</Badge>
                   ) : (
                     <span className="text-muted-foreground">—</span>
                   )}
                 </TableCell>
                 <TableCell>
                   <div className="flex flex-wrap gap-1">
-                    <Badge variant="secondary">{user.role}</Badge>
+                    <Badge variant="secondary">{user.role_label || user.role}</Badge>
                     {user.is_it && <Badge>IT</Badge>}
                     {user.is_active === false && <Badge variant="destructive">Inactive</Badge>}
                   </div>

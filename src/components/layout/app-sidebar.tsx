@@ -47,8 +47,7 @@ const adminItems = [
 export function AppSidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
-  const role = session?.user?.role;
-  const showAdmin = role === "admin";
+  const showAdmin = session?.user?.permRole === "admin";
 
   return (
     <Sidebar>

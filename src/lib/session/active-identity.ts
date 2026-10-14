@@ -2,7 +2,13 @@ import { auth } from "@/auth";
 import type { UserRole, Office, Department, ViewAs } from "@/types/auth";
 
 export interface ActiveIdentity {
+  /**
+   * Permission role (launcher_permission_role: a custom launcher role's
+   * acts_as, else the role itself). Every authorization check uses this.
+   */
   role: UserRole;
+  /** Real launcher role, for display only. */
+  displayRole: UserRole;
   profileId: string;
   office?: Office;
   department?: Department | null;
@@ -24,7 +30,8 @@ export async function getActiveIdentity(): Promise<ActiveIdentity | null> {
   if (!session?.user) return null;
 
   return {
-    role: session.user.role,
+    role: session.user.permRole,
+    displayRole: session.user.role,
     profileId: session.user.profileId,
     office: session.user.office,
     department: session.user.department ?? null,

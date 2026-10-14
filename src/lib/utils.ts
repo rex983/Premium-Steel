@@ -28,11 +28,3 @@ export const STATUS_COLORS: Record<string, "default" | "secondary" | "destructiv
   expired: "destructive",
 };
 
-export function canDeleteRecord(role?: string): boolean {
-  return (
-    role === "admin" ||
-    role === "senior_manager" ||
-    role === "junior_manager" ||
-    role === "sales_rep"
-  );
-}

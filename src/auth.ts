@@ -7,6 +7,7 @@ import {
   launcherSignIn,
   recheckDue,
   recheckLauncherSession,
+  viewAsExpired,
   type LauncherProfile,
   type SignInResult,
 } from "@/lib/launcher-kit/session";
@@ -190,6 +191,8 @@ function applyProfile(token: JWT, profile: LauncherProfile, permRole: string) {
  * gate is removed or the profile stops being a launcher admin.
  */
 async function revalidateToken(token: JWT): Promise<JWT | null> {
+  if (viewAsExpired(token.viewAs as ViewAs | null | undefined)) return null;
+
   const checkedAt = typeof token.checkedAt === "number" ? token.checkedAt : 0;
   if (!recheckDue(checkedAt)) return token;
 
@@ -209,8 +212,6 @@ async function revalidateToken(token: JWT): Promise<JWT | null> {
     profileId: token.profileId,
     signedInAt: token.signedInAt as number,
     accessOkAt: typeof token.accessOkAt === "number" ? token.accessOkAt : null,
-    role: typeof token.role === "string" ? token.role : null,
-    permRole: typeof token.permRole === "string" ? token.permRole : null,
     viewAs: (token.viewAs as ViewAs | null | undefined) ?? null,
   });
   if (result.status === "keep") return token;

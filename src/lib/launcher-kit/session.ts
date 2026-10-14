@@ -9,6 +9,12 @@ import type { SignInError } from "./sign-in-errors";
 // Sign-in checks and the session recheck every app runs, so the launcher is
 // the source of truth for who may use the app and with what role.
 // Each app's auth.ts calls these and copies the results onto its token.
+//
+// All times here are milliseconds since the epoch; convert if the app's
+// token stores seconds. A common pattern: in the NextAuth signIn callback,
+// call launcherSignIn and attach the result to the `user` object, then copy
+// it onto the token in the jwt callback (works without a DB adapter, where
+// both callbacks see the same object).
 
 /** How often a session is rechecked against the launcher. */
 export const RECHECK_INTERVAL_MS = 60_000;
@@ -145,11 +151,19 @@ export interface RecheckInput {
   signedInAt: number;
   /** ms since epoch of the last successful recheck (falls back to signedInAt). */
   accessOkAt?: number | null;
-  /** Role and permission role already on the token, to skip re-resolving. */
+  /**
+   * Accepted for compatibility but not used: the permission role is always
+   * re-resolved, so a changed "Permissions like" reaches open sessions too.
+   */
   role?: string | null;
   permRole?: string | null;
   sessionVersion?: number | null;
   viewAs?: ViewAs | null;
+}
+
+/** True once a View as session is past VIEW_AS_MAX_MS. Cheap: call it on every request. */
+export function viewAsExpired(viewAs: ViewAs | null | undefined, now = Date.now()): boolean {
+  return !!viewAs && now - viewAs.startedAt > VIEW_AS_MAX_MS;
 }
 
 /** True when the token's last check is older than RECHECK_INTERVAL_MS. */
@@ -164,7 +178,7 @@ export function recheckDue(checkedAt: number | null | undefined, now = Date.now(
  */
 export async function recheckLauncherSession(input: RecheckInput): Promise<RecheckResult> {
   const now = Date.now();
-  if (input.viewAs && now - input.viewAs.startedAt > VIEW_AS_MAX_MS) {
+  if (viewAsExpired(input.viewAs, now)) {
     return { status: "end", reason: "view_as_expired" };
   }
 
@@ -199,9 +213,6 @@ export async function recheckLauncherSession(input: RecheckInput): Promise<Reche
     return now - lastOk > ACCESS_GRACE_MS ? { status: "end", reason: "unreachable" } : { status: "keep" };
   }
 
-  const permRole =
-    input.permRole != null && input.role === profile.role
-      ? input.permRole
-      : await resolvePermissionRole(profile.role);
+  const permRole = await resolvePermissionRole(profile.role);
   return { status: "ok", profile, permRole, now };
 }

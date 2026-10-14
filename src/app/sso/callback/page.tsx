@@ -1,59 +1,11 @@
-"use client";
-
-import { Suspense, useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { signIn } from "next-auth/react";
-import { signInErrorMessage } from "@/lib/launcher/sign-in-errors";
-
-function Callback() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const token = searchParams.get("sso_token");
-    if (!token) {
-      setError(signInErrorMessage("SsoInvalid"));
-      return;
-    }
-    (async () => {
-      const res = await signIn("sso-jwt", {
-        token,
-        callbackUrl: "/calculator",
-        redirect: false,
-      });
-      if (res?.ok && res.url) {
-        router.replace(res.url);
-      } else if (res?.error && res.error !== "CredentialsSignin") {
-        setError(signInErrorMessage(res.error));
-      } else {
-        setError(signInErrorMessage("SsoInvalid"));
-      }
-    })();
-  }, [router, searchParams]);
-
-  return (
-    <div className="flex min-h-screen items-center justify-center">
-      <div className="text-center space-y-2">
-        {error ? (
-          <>
-            <p className="text-destructive font-medium">{error}</p>
-            <a href="/login" className="text-sm text-muted-foreground underline">
-              Go to login
-            </a>
-          </>
-        ) : (
-          <p className="text-muted-foreground">Signing you in…</p>
-        )}
-      </div>
-    </div>
-  );
-}
+import { Suspense } from "react";
+import { signInErrorMessage, signInErrorMessages } from "@/lib/launcher/sign-in-errors";
+import { Callback } from "./callback";
 
 export default function SsoCallbackPage() {
   return (
     <Suspense>
-      <Callback />
+      <Callback messages={signInErrorMessages()} invalid={signInErrorMessage("SsoInvalid")!} />
     </Suspense>
   );
 }

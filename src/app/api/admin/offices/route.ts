@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-guard";
-import { getLauncherOffices } from "@/lib/launcher/org";
+import { getLauncherOffices } from "@/lib/launcher-kit/org";
 
 export const dynamic = "force-dynamic";
 

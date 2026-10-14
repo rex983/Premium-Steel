@@ -4,7 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { logAudit } from "@/lib/audit";
 import { requireAdmin } from "@/lib/admin-guard";
 import { invalidatePricingDataCache } from "@/lib/pricing-data-cache";
-import { invalidOffices } from "@/lib/launcher/org";
+import { invalidOffices } from "@/lib/launcher-kit/org";
 import { VALID_STATES } from "@/lib/us-states";
 
 

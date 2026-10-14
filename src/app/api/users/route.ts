@@ -6,7 +6,7 @@ import {
   getLauncherDepartments,
   getLauncherOffices,
   getLauncherRoles,
-} from "@/lib/launcher/org";
+} from "@/lib/launcher-kit/org";
 
 // Users, roles, offices and departments are managed only in the BBD Launcher
 // (Admin → Users). PSB lists them read-only.

@@ -20,7 +20,7 @@ type UserRow = UserProfile & {
   office_label?: string;
   department_label?: string;
 };
-import { LAUNCHER_URL } from "@/lib/launcher/url";
+import { LAUNCHER_USERS_URL } from "@/lib/launcher-kit/urls";
 
 
 export default function AdminUsersPage() {
@@ -44,7 +44,7 @@ export default function AdminUsersPage() {
             user, use &ldquo;View as&rdquo; in the launcher.
           </p>
           <Button asChild variant="outline">
-            <a href={`${LAUNCHER_URL}/admin/users`} target="_blank" rel="noreferrer">
+            <a href={LAUNCHER_USERS_URL} target="_blank" rel="noreferrer">
               <ExternalLink className="mr-2 h-4 w-4" />
               Open Launcher Users
             </a>

@@ -13,7 +13,7 @@ function Callback() {
   useEffect(() => {
     const token = searchParams.get("sso_token");
     if (!token) {
-      setError("Missing SSO token");
+      setError(signInErrorMessage("SsoInvalid"));
       return;
     }
     (async () => {
@@ -27,7 +27,7 @@ function Callback() {
       } else if (res?.error && res.error !== "CredentialsSignin") {
         setError(signInErrorMessage(res.error));
       } else {
-        setError("Sign-in failed. Token may be expired or invalid.");
+        setError(signInErrorMessage("SsoInvalid"));
       }
     })();
   }, [router, searchParams]);

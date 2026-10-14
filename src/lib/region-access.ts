@@ -3,7 +3,7 @@ import type { UserRole, Office } from "@/types/auth";
 
 // `role` arguments below are permission roles (session permRole), never the
 // raw launcher role. Region offices are validated against launcher_offices
-// (src/lib/launcher/org.ts), so any launcher office works.
+// (src/lib/launcher-kit/org.ts), so any launcher office works.
 
 export function canAccessRegion(
   role: UserRole | undefined,

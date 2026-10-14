@@ -4,7 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { logAudit } from "@/lib/audit";
 import { requireAdmin } from "@/lib/admin-guard";
 import { VALID_STATES } from "@/lib/us-states";
-import { invalidOffices } from "@/lib/launcher/org";
+import { invalidOffices } from "@/lib/launcher-kit/org";
 
 /** GET — list all regions (active + inactive) with current pricing version + last upload */
 export async function GET() {

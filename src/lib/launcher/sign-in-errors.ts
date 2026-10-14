@@ -1,18 +1,23 @@
-/** Messages for the sign-in error codes returned by the auth signIn callback. */
+import { signInErrorMessage as launcherSignInErrorMessage } from "@/lib/launcher-kit/sign-in-errors";
+
+/** Pre-kit codes still accepted on the login page (old links / bookmarks). */
+const LEGACY_CODES: Record<string, string> = {
+  AccessCheckFailed: "LauncherUnavailable",
+};
+
+/**
+ * Message for a sign-in ?error= code: the launcher kit's codes first, then
+ * NextAuth's own codes.
+ */
 export function signInErrorMessage(code: string | null | undefined): string | null {
+  if (!code) return null;
+  const kit = launcherSignInErrorMessage(LEGACY_CODES[code] ?? code);
+  if (kit) return kit;
   switch (code) {
-    case "NoAppAccess":
-      return "You don't have access to PSB Pricing in the BBD Launcher.";
-    case "AccessCheckFailed":
-      return "Couldn't confirm your launcher access — try again.";
-    case "NoProfile":
-      return "Your account isn't set up (or is inactive) in the BBD Launcher.";
-    case "ViewAsDenied":
-      return "View as is only available to active launcher admins.";
     case "AccessDenied":
     case "CredentialsSignin":
       return "Sign-in was denied.";
     default:
-      return code ? "Sign-in failed." : null;
+      return "Sign-in failed.";
   }
 }

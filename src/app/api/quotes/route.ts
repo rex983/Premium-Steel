@@ -7,7 +7,7 @@ import { getCurrentPricingData } from "@/lib/pricing-data-cache";
 import { priceBuilding } from "@/lib/pricing/engine";
 import type { BuildingConfig } from "@/lib/pricing/types";
 import type { PSBPricingMatrices } from "@/types/pricing";
-import { isUuid, validProfileId } from "@/lib/validators";
+import { isUuid, sanitizeSearchInput, validProfileId } from "@/lib/validators";
 import { accessibleRegionIds, canSessionAccessRegionId } from "@/lib/region-access";
 
 export async function GET(req: NextRequest) {
@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
     query = query.eq("status", status);
   }
   if (search) {
-    const s = search.replace(/[%_\\(),."']/g, "");
+    const s = sanitizeSearchInput(search);
     if (s) {
       query = query.or(`quote_number.ilike.%${s}%,customer_name.ilike.%${s}%`);
     }

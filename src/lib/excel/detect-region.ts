@@ -1,6 +1,7 @@
 import type { WorkBook } from "xlsx";
 import { getCell, findSheet } from "./sheet-readers/utils";
 import type { Region } from "@/types/pricing";
+import { VALID_STATES } from "@/lib/us-states";
 
 // Detection accepts old and new region membership so re-uploads of prior
 // workbook versions still classify correctly.
@@ -16,13 +17,6 @@ const NORTH_STATE_NAMES = new Set([
 
 const SOUTH_STATE_CODES = ["IN", "OH", "KY", "IL", "TN", "WV", "TX", "MO"];
 const NORTH_STATE_CODES = ["MI", "WI", "PA", "MN"];
-
-const VALID_STATES = new Set([
-  "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN",
-  "IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV",
-  "NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN",
-  "TX","UT","VT","VA","WA","WV","WI","WY",
-]);
 
 export interface RegionDetection {
   region: Region;

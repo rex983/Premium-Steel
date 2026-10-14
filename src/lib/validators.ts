@@ -7,3 +7,8 @@ export function isUuid(v: unknown): v is string {
 export function validProfileId(id: string | null | undefined): string | null {
   return id && UUID_RE.test(id) ? id : null;
 }
+
+// Strips PostgREST/ILIKE special characters so user input can't break the `.or()` filter.
+export function sanitizeSearchInput(raw: string): string {
+  return raw.replace(/[%_\\(),."']/g, "");
+}

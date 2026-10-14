@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { viewAsWriteBlock } from "@/lib/session/view-as";
 import { getActiveIdentity } from "@/lib/session/active-identity";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { validProfileId } from "@/lib/validators";
+import { sanitizeSearchInput, validProfileId } from "@/lib/validators";
 
 export async function GET(req: NextRequest) {
   const identity = await getActiveIdentity();
@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
     .order("name");
 
   if (search) {
-    const s = search.replace(/[%_\\(),."']/g, "");
+    const s = sanitizeSearchInput(search);
     if (s) q = q.or(`name.ilike.%${s}%,email.ilike.%${s}%,phone.ilike.%${s}%`);
   }
 

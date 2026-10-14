@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isOwnQuotesOnly } from "@/lib/launcher/roles";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { getActiveIdentity } from "@/lib/session/active-identity";
+import { assertQuoteReadable } from "@/lib/session/authorize-quote";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { QuotePdf } from "@/lib/pdf/quote-pdf";
-import { canAccessRegion } from "@/lib/region-access";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -32,14 +31,8 @@ export async function GET(
     return NextResponse.json({ error: "Quote not found" }, { status: 404 });
   }
 
-  const { role, profileId, office } = identity;
-  const regionOffices = (quote.region as { offices?: string[] } | null)?.offices;
-  if (!canAccessRegion(role, office, regionOffices)) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
-  }
-  if (isOwnQuotesOnly(role) && quote.created_by !== profileId) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
-  }
+  const denied = assertQuoteReadable(quote, identity);
+  if (denied) return denied;
 
   const buffer = await renderToBuffer(
     QuotePdf({

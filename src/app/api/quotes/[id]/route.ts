@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { viewAsWriteBlock } from "@/lib/session/view-as";
-import { isOwnQuotesOnly, isReadOnlyRole } from "@/lib/launcher/roles";
 import { getActiveIdentity } from "@/lib/session/active-identity";
+import { assertQuoteReadable, assertQuoteWritable } from "@/lib/session/authorize-quote";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { canAccessRegion } from "@/lib/region-access";
 
 const ALLOWED_PATCH_FIELDS = [
   "status",
@@ -33,16 +32,10 @@ export async function GET(
     return NextResponse.json({ error: "Quote not found" }, { status: 404 });
   }
 
-  const { role, profileId, office } = identity;
-  const regionOffices = (data.region as { offices?: string[] } | null)?.offices;
-  if (!canAccessRegion(role, office, regionOffices)) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
-  }
-  if (isOwnQuotesOnly(role) && data.created_by !== profileId) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
-  }
+  const denied = assertQuoteReadable(data, identity);
+  if (denied) return denied;
 
-  const { region: _region, ...quote } = data as { region?: unknown } & Record<string, unknown>;
+  const { region: _region, ...quote } = data;
   void _region;
   return NextResponse.json({ quote });
 }
@@ -68,15 +61,8 @@ export async function PATCH(
     return NextResponse.json({ error: "Quote not found" }, { status: 404 });
   }
 
-  const { role, profileId, office } = identity;
-  const regionOffices = (existing.region as { offices?: string[] } | null)?.offices;
-  if (!canAccessRegion(role, office, regionOffices)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-  if (isReadOnlyRole(role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  if (isOwnQuotesOnly(role) && existing.created_by !== profileId) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const denied = assertQuoteWritable(existing, identity);
+  if (denied) return denied;
 
   const body = await req.json();
   const update: Record<string, unknown> = {};
@@ -121,15 +107,8 @@ export async function DELETE(
     .single();
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const { role, profileId, office } = identity;
-  const regionOffices = (existing.region as { offices?: string[] } | null)?.offices;
-  if (!canAccessRegion(role, office, regionOffices)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-  if (isReadOnlyRole(role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  if (isOwnQuotesOnly(role) && existing.created_by !== profileId) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const denied = assertQuoteWritable(existing, identity);
+  if (denied) return denied;
 
   const { error } = await supabase.from("psb_quotes").delete().eq("id", id);
   if (error) {

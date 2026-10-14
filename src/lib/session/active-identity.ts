@@ -1,10 +1,5 @@
-import { cookies } from "next/headers";
 import { auth } from "@/auth";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { isUuid } from "@/lib/validators";
-import type { UserRole, Office, Department } from "@/types/auth";
-
-export const IMPERSONATION_COOKIE = "psb_view_as";
+import type { UserRole, Office, Department, ViewAs } from "@/types/auth";
 
 export interface ActiveIdentity {
   role: UserRole;
@@ -13,47 +8,29 @@ export interface ActiveIdentity {
   department?: Department | null;
   email?: string | null;
   name?: string | null;
+  /** True while a launcher admin is viewing the app as this user (read-only). */
   isImpersonating: boolean;
-  actualAdminEmail?: string | null;
-  actualAdminProfileId?: string;
+  viewAs: ViewAs | null;
 }
 
+/**
+ * The identity every authorization check uses. All fields come from the
+ * session, which is synced from the launcher's profiles row every 60s. During
+ * an admin "View as" the session already IS the target user (the launcher mints
+ * the SSO token for them), so no extra lookup is needed here.
+ */
 export async function getActiveIdentity(): Promise<ActiveIdentity | null> {
   const session = await auth();
   if (!session?.user) return null;
 
-  const base: ActiveIdentity = {
+  return {
     role: session.user.role,
     profileId: session.user.profileId,
     office: session.user.office,
     department: session.user.department ?? null,
     email: session.user.email,
     name: session.user.name,
-    isImpersonating: false,
-  };
-  if (session.user.role !== "admin") return base;
-
-  const cookieStore = await cookies();
-  const targetId = cookieStore.get(IMPERSONATION_COOKIE)?.value;
-  if (!targetId || !isUuid(targetId)) return base;
-
-  const supabase = createAdminClient();
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("id, email, name:full_name, role, office, department")
-    .eq("id", targetId)
-    .single();
-  if (!profile) return base;
-
-  return {
-    role: profile.role as UserRole,
-    profileId: profile.id,
-    office: (profile.office ?? undefined) as Office | undefined,
-    department: (profile.department ?? null) as Department | null,
-    email: profile.email,
-    name: profile.name,
-    isImpersonating: true,
-    actualAdminEmail: session.user.email,
-    actualAdminProfileId: session.user.profileId,
+    isImpersonating: !!session.viewAs,
+    viewAs: session.viewAs ?? null,
   };
 }

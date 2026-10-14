@@ -1,4 +1,5 @@
 import type { DefaultSession } from "next-auth";
+import type { ViewAs } from "@/lib/launcher-kit/session";
 
 /** Built-in launcher roles; custom launcher roles arrive as arbitrary strings. */
 export type LauncherRoleName =
@@ -14,17 +15,12 @@ export type LauncherRoleName =
 export type UserRole = LauncherRoleName | (string & {});
 // profiles.office / profiles.department values. The launcher owns the lists
 // (launcher_offices / launcher_departments) and admins can add new ones, so
-// these are plain strings; read the current options via src/lib/launcher/org.ts.
+// these are plain strings; read the current options via src/lib/launcher-kit/org.ts.
 export type Office = string;
 export type Department = string;
 
 /** Admin "View as" (launcher-initiated, read-only impersonation). */
-export interface ViewAs {
-  actorProfileId: string;
-  actorEmail: string;
-  actorName: string | null;
-  startedAt: number;
-}
+export type { ViewAs };
 
 export interface UserProfile {
   id: string;

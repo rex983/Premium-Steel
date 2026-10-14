@@ -1,12 +1,9 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { UserRole, Office } from "@/types/auth";
 
-export const VALID_OFFICES: Office[] = ["Sales", "BST", "RnD"];
-const VALID_OFFICE_SET = new Set<string>(VALID_OFFICES);
-
-export function isValidOffice(value: unknown): value is Office {
-  return typeof value === "string" && VALID_OFFICE_SET.has(value);
-}
+// `role` arguments below are permission roles (session permRole), never the
+// raw launcher role. Region offices are validated against launcher_offices
+// (src/lib/launcher/org.ts), so any launcher office works.
 
 export function canAccessRegion(
   role: UserRole | undefined,

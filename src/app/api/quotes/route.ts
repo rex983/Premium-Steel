@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { viewAsWriteBlock } from "@/lib/session/view-as";
+import { isOwnQuotesOnly } from "@/lib/launcher/roles";
 import { getActiveIdentity } from "@/lib/session/active-identity";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentPricingData } from "@/lib/pricing-data-cache";
@@ -37,7 +39,7 @@ export async function GET(req: NextRequest) {
     query = query.in("region_id", regionScope);
   }
 
-  if (role === "sales_rep" || role === "viewer") {
+  if (isOwnQuotesOnly(role)) {
     query = query.eq("created_by", profileId);
   }
 
@@ -60,6 +62,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const readOnly = await viewAsWriteBlock();
+  if (readOnly) return readOnly;
   const identity = await getActiveIdentity();
   if (!identity) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

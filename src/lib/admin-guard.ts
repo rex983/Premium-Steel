@@ -16,10 +16,10 @@ export async function requireAdmin(): Promise<
   | { ok: false; res: NextResponse }
 > {
   const sessionRaw = (await (auth as unknown as () => Promise<unknown>)()) as
-    | { user?: { email?: string | null; role?: UserRole; profileId?: string } }
+    | { user?: { email?: string | null; permRole?: UserRole; profileId?: string } }
     | null;
   const user = sessionRaw?.user;
-  if (!user || user.role !== "admin") {
+  if (!user || user.permRole !== "admin") {
     return { ok: false, res: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
   }
   return { ok: true, email: user.email, profileId: user.profileId ?? "" };

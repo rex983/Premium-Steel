@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { viewAsWriteBlock } from "@/lib/session/view-as";
+import { isOwnQuotesOnly, isReadOnlyRole } from "@/lib/launcher/roles";
 import { getActiveIdentity } from "@/lib/session/active-identity";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { canAccessRegion } from "@/lib/region-access";
@@ -36,7 +38,7 @@ export async function GET(
   if (!canAccessRegion(role, office, regionOffices)) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
-  if ((role === "sales_rep" || role === "viewer") && data.created_by !== profileId) {
+  if (isOwnQuotesOnly(role) && data.created_by !== profileId) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
@@ -49,6 +51,8 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const readOnly = await viewAsWriteBlock();
+  if (readOnly) return readOnly;
   const identity = await getActiveIdentity();
   if (!identity) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -69,8 +73,8 @@ export async function PATCH(
   if (!canAccessRegion(role, office, regionOffices)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
-  if (role === "viewer") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  if (role === "sales_rep" && existing.created_by !== profileId) {
+  if (isReadOnlyRole(role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (isOwnQuotesOnly(role) && existing.created_by !== profileId) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -103,6 +107,8 @@ export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const readOnly = await viewAsWriteBlock();
+  if (readOnly) return readOnly;
   const identity = await getActiveIdentity();
   if (!identity) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -120,8 +126,8 @@ export async function DELETE(
   if (!canAccessRegion(role, office, regionOffices)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
-  if (role === "viewer") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  if (role === "sales_rep" && existing.created_by !== profileId) {
+  if (isReadOnlyRole(role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (isOwnQuotesOnly(role) && existing.created_by !== profileId) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

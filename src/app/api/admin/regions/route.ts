@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { viewAsWriteBlock } from "@/lib/session/view-as";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAudit } from "@/lib/audit";
 import { requireAdmin } from "@/lib/admin-guard";
 import { VALID_STATES } from "@/lib/us-states";
-import { isValidOffice } from "@/lib/region-access";
+import { invalidOffices } from "@/lib/launcher/org";
 
 /** GET — list all regions (active + inactive) with current pricing version + last upload */
 export async function GET() {
@@ -46,6 +47,8 @@ export async function GET() {
 
 /** POST — create a new region */
 export async function POST(req: NextRequest) {
+  const readOnly = await viewAsWriteBlock();
+  if (readOnly) return readOnly;
   const guard = await requireAdmin();
   if (!guard.ok) return guard.res;
 
@@ -67,9 +70,9 @@ export async function POST(req: NextRequest) {
   }
 
   const officesInput = Array.isArray(offices) ? offices : [];
-  const invalidOffices = officesInput.filter((o) => !isValidOffice(o));
-  if (invalidOffices.length > 0) {
-    return NextResponse.json({ error: `Invalid offices: ${invalidOffices.join(", ")}` }, { status: 400 });
+  const badOffices = await invalidOffices(officesInput);
+  if (badOffices.length > 0) {
+    return NextResponse.json({ error: `Invalid offices: ${badOffices.join(", ")}` }, { status: 400 });
   }
   const officesClean = Array.from(new Set(officesInput));
 

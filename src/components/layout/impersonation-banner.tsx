@@ -1,55 +1,46 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { signOut, useSession } from "next-auth/react";
+import { LAUNCHER_URL } from "@/lib/launcher/url";
 
-interface ActiveIdentity {
-  role: string;
-  profileId: string;
-  office?: string | null;
-  email?: string | null;
-  name?: string | null;
-  isImpersonating: boolean;
-  actualAdminEmail?: string | null;
-}
 
+/**
+ * Shown on every authenticated page while a launcher admin is viewing PSB as
+ * another user. The session is read-only (enforced server-side in middleware).
+ */
 export function ImpersonationBanner() {
-  const [identity, setIdentity] = useState<ActiveIdentity | null>(null);
+  const { data: session } = useSession();
   const [exiting, setExiting] = useState(false);
 
-  useEffect(() => {
-    fetch("/api/session/active")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => setIdentity(data))
-      .catch(() => setIdentity(null));
-  }, []);
-
-  if (!identity?.isImpersonating) return null;
+  const viewAs = session?.viewAs;
+  if (!viewAs) return null;
 
   const exit = async () => {
     setExiting(true);
-    await fetch("/api/admin/impersonate", { method: "DELETE" });
-    window.location.href = "/admin/users";
+    try {
+      await signOut({ redirect: false });
+    } finally {
+      window.location.href = `${LAUNCHER_URL}/dashboard`;
+    }
   };
 
-  const who = identity.name?.trim() || identity.email || identity.profileId;
+  const who = session.user?.name?.trim() || session.user?.email || "user";
+  const actor = viewAs.actorName?.trim() || viewAs.actorEmail;
 
   return (
-    <div className="sticky top-0 z-50 flex items-center justify-between gap-4 border-b border-amber-700 bg-amber-400/90 px-4 py-2 text-sm text-amber-950 backdrop-blur">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="font-semibold uppercase tracking-wide text-xs">View as</span>
-        <span className="font-medium">{who}</span>
-        <span className="text-xs opacity-80">
-          {identity.office ? `${identity.office} · ` : ""}
-          <span className="uppercase">{identity.role}</span>
-        </span>
-        {identity.actualAdminEmail && (
-          <span className="text-xs opacity-70">(admin: {identity.actualAdminEmail})</span>
-        )}
-      </div>
+    <div
+      role="status"
+      className="sticky top-0 z-50 flex items-center justify-between gap-4 border-b-2 border-black bg-yellow-300 px-4 py-2 text-sm font-medium text-black"
+    >
+      <span>
+        Viewing as <strong>{who}</strong> ({session.user?.role}) — read-only. Signed in as{" "}
+        <strong>{actor}</strong>.
+      </span>
       <button
         onClick={exit}
         disabled={exiting}
-        className="rounded border border-amber-800 bg-amber-100 px-2 py-1 text-xs font-semibold hover:bg-amber-50 disabled:opacity-60"
+        className="shrink-0 rounded border-2 border-black bg-white px-3 py-1 text-xs font-bold hover:bg-yellow-100 disabled:opacity-60"
       >
         {exiting ? "Exiting…" : "Exit"}
       </button>

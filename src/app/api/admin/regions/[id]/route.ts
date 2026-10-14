@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { viewAsWriteBlock } from "@/lib/session/view-as";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAudit } from "@/lib/audit";
 import { requireAdmin } from "@/lib/admin-guard";
 import { invalidatePricingDataCache } from "@/lib/pricing-data-cache";
-import { isValidOffice } from "@/lib/region-access";
+import { invalidOffices } from "@/lib/launcher/org";
 
 const VALID_STATES = new Set([
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN",
@@ -16,6 +17,8 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const readOnly = await viewAsWriteBlock();
+  if (readOnly) return readOnly;
   const guard = await requireAdmin();
   if (!guard.ok) return guard.res;
 
@@ -37,9 +40,9 @@ export async function PATCH(
     update.slug = body.states.join("-").toLowerCase();
   }
   if (Array.isArray(body.offices)) {
-    const invalidOffices = body.offices.filter((o: unknown) => !isValidOffice(o));
-    if (invalidOffices.length > 0) {
-      return NextResponse.json({ error: `Invalid offices: ${invalidOffices.join(", ")}` }, { status: 400 });
+    const badOffices = await invalidOffices(body.offices);
+    if (badOffices.length > 0) {
+      return NextResponse.json({ error: `Invalid offices: ${badOffices.join(", ")}` }, { status: 400 });
     }
     update.offices = Array.from(new Set(body.offices as string[]));
   }
@@ -74,6 +77,8 @@ export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const readOnly = await viewAsWriteBlock();
+  if (readOnly) return readOnly;
   const guard = await requireAdmin();
   if (!guard.ok) return guard.res;
 

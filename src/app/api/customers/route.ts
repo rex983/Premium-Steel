@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { viewAsWriteBlock } from "@/lib/session/view-as";
 import { getActiveIdentity } from "@/lib/session/active-identity";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { validProfileId } from "@/lib/validators";
@@ -29,6 +30,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const readOnly = await viewAsWriteBlock();
+  if (readOnly) return readOnly;
   const identity = await getActiveIdentity();
   if (!identity) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 

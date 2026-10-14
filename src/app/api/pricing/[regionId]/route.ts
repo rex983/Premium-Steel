@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getActiveIdentity } from "@/lib/session/active-identity";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { canAccessRegion } from "@/lib/region-access";
+import { getCurrentPricingData } from "@/lib/pricing-data-cache";
 
 export const dynamic = "force-dynamic";
 
@@ -31,21 +32,25 @@ export async function GET(
     return NextResponse.json({ error: "Region not available" }, { status: 404 });
   }
 
-  let q = supabase
-    .from("psb_pricing_data")
-    .select("id, region_id, version, is_current, matrices, created_at")
-    .eq("region_id", regionId);
-  if (versionId) {
-    q = q.eq("id", versionId);
-  } else {
-    q = q.eq("is_current", true);
-  }
-  const { data, error } = await q.maybeSingle();
-
-  if (error) {
-    console.error("Pricing fetch error:", error.message);
+  let data;
+  try {
+    if (versionId) {
+      const res = await supabase
+        .from("psb_pricing_data")
+        .select("id, region_id, version, is_current, matrices, created_at")
+        .eq("region_id", regionId)
+        .eq("id", versionId)
+        .maybeSingle();
+      if (res.error) throw new Error(res.error.message);
+      data = res.data;
+    } else {
+      data = await getCurrentPricingData(regionId);
+    }
+  } catch (e) {
+    console.error("Pricing fetch error:", e instanceof Error ? e.message : e);
     return NextResponse.json({ error: "Failed to load pricing" }, { status: 500 });
   }
+
   if (!data) {
     return NextResponse.json({ pricing: null });
   }

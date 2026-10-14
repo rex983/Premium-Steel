@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { QuotePdf } from "@/lib/pdf/quote-pdf";
+import { getActiveIdentity } from "@/lib/session/active-identity";
 import type { EngineOutput } from "@/lib/pricing/types";
 
 export const runtime = "nodejs";
@@ -22,6 +23,9 @@ interface PreviewBody {
 }
 
 export async function POST(req: NextRequest) {
+  const identity = await getActiveIdentity();
+  if (!identity) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   let body: PreviewBody;
   try {
     body = (await req.json()) as PreviewBody;

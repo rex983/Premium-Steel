@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
+import { viewAsWriteBlock } from "@/lib/session/view-as";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { parsePsbWorkbook } from "@/lib/excel/parser";
 import { logAudit } from "@/lib/audit";
 import { requireAdmin } from "@/lib/admin-guard";
+import { invalidatePricingDataCache } from "@/lib/pricing-data-cache";
 import { isUuid, validProfileId } from "@/lib/validators";
 
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
+  const readOnly = await viewAsWriteBlock();
+  if (readOnly) return readOnly;
   const guard = await requireAdmin();
   if (!guard.ok) return guard.res;
 
@@ -129,6 +133,7 @@ export async function POST(req: NextRequest) {
   await supabase.from("psb_pricing_data")
     .update({ is_current: true })
     .eq("id", newPricing.id);
+  invalidatePricingDataCache();
 
   // Update upload to success
   const sheetCount = Object.keys(parseResult.matrices).length;

@@ -29,17 +29,34 @@ interface Region {
   lastUpload: { filename: string; uploadedAt: string } | null;
 }
 
-const OFFICE_OPTIONS: { value: string; label: string }[] = [
-  { value: "Sales", label: "Sales" },
-  { value: "BST", label: "BST" },
-  { value: "RnD", label: "R&D" },
-];
+interface OfficeOption {
+  name: string;
+  display_name: string;
+}
+
+// Offices come from the BBD Launcher (launcher_offices via /api/admin/offices);
+// admins add new ones there. Unknown names render as-is.
+function useLauncherOffices(): OfficeOption[] {
+  const [offices, setOffices] = useState<OfficeOption[]>([]);
+  useEffect(() => {
+    fetch("/api/admin/offices")
+      .then((r) => (r.ok ? r.json() : { offices: [] }))
+      .then((d) => setOffices(Array.isArray(d.offices) ? d.offices : []))
+      .catch(() => setOffices([]));
+  }, []);
+  return offices;
+}
+
+function officeLabel(options: OfficeOption[], name: string): string {
+  return options.find((o) => o.name === name)?.display_name || name;
+}
 
 export default function RegionsPage() {
   const [regions, setRegions] = useState<Region[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Region | null>(null);
   const [creating, setCreating] = useState(false);
+  const officeOptions = useLauncherOffices();
 
   const load = async () => {
     setLoading(true);
@@ -111,7 +128,7 @@ export default function RegionsPage() {
                           <span className="italic">admin-only</span>
                         ) : (
                           r.offices.map((o) => (
-                            <Badge key={o} variant="secondary" className="text-[10px]">{o}</Badge>
+                            <Badge key={o} variant="secondary" className="text-[10px]">{officeLabel(officeOptions, o)}</Badge>
                           ))
                         )}
                       </div>
@@ -171,6 +188,15 @@ function RegionDialog({
   const [displayName, setDisplayName] = useState(region?.display_name ?? "");
   const [statesText, setStatesText] = useState((region?.states ?? []).join(", "));
   const [offices, setOffices] = useState<string[]>(region?.offices ?? []);
+  const launcherOffices = useLauncherOffices();
+  // Launcher offices, plus any office already on this region that the
+  // launcher no longer lists (so it can still be unchecked).
+  const officeChoices: OfficeOption[] = [
+    ...launcherOffices,
+    ...offices
+      .filter((o) => !launcherOffices.some((l) => l.name === o))
+      .map((o) => ({ name: o, display_name: o })),
+  ];
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -246,18 +272,18 @@ function RegionDialog({
           <div className="space-y-1">
             <Label className="text-xs">Offices that can view + use this region</Label>
             <div className="flex flex-wrap gap-3 pt-1">
-              {OFFICE_OPTIONS.map((opt) => (
+              {officeChoices.map((opt) => (
                 <label
-                  key={opt.value}
+                  key={opt.name}
                   className="flex items-center gap-2 text-sm cursor-pointer"
                 >
                   <input
                     type="checkbox"
-                    checked={offices.includes(opt.value)}
-                    onChange={() => toggleOffice(opt.value)}
+                    checked={offices.includes(opt.name)}
+                    onChange={() => toggleOffice(opt.name)}
                     className="h-4 w-4"
                   />
-                  {opt.label}
+                  {opt.display_name}
                 </label>
               ))}
             </div>

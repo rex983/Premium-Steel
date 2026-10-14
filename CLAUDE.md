@@ -115,7 +115,7 @@ AFTER psb-pricing is deployed (update the URL inside that file first). It:
 ```sh
 cd C:/Users/Redir/psb-pricing
 npm install
-cp .env.example .env.local        # fill in Supabase + AUTH_SECRET + ADMIN_PASSWORD
+cp .env.example .env.local        # fill in Supabase + AUTH_SECRET (+ BOOTSTRAP_ADMIN_EMAIL/ADMIN_PASSWORD for break-glass admin)
 # After applying Supabase migration:
 npm run dev                        # http://localhost:3000
 ```

@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
+import { signInErrorMessage } from "@/lib/launcher/sign-in-errors";
 
 function Callback() {
   const router = useRouter();
@@ -23,6 +24,8 @@ function Callback() {
       });
       if (res?.ok && res.url) {
         router.replace(res.url);
+      } else if (res?.error && res.error !== "CredentialsSignin") {
+        setError(signInErrorMessage(res.error));
       } else {
         setError("Sign-in failed. Token may be expired or invalid.");
       }

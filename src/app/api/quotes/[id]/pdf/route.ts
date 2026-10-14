@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isOwnQuotesOnly } from "@/lib/launcher/roles";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { getActiveIdentity } from "@/lib/session/active-identity";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -36,7 +37,7 @@ export async function GET(
   if (!canAccessRegion(role, office, regionOffices)) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
-  if ((role === "sales_rep" || role === "viewer") && quote.created_by !== profileId) {
+  if (isOwnQuotesOnly(role) && quote.created_by !== profileId) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 

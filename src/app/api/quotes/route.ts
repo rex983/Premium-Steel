@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { viewAsWriteBlock } from "@/lib/session/view-as";
+import { rejectIfViewingAs } from "@/lib/session/view-as";
 import { isOwnQuotesOnly } from "@/lib/launcher/roles";
 import { getActiveIdentity } from "@/lib/session/active-identity";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -62,7 +62,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const readOnly = await viewAsWriteBlock();
+  const readOnly = await rejectIfViewingAs();
   if (readOnly) return readOnly;
   const identity = await getActiveIdentity();
   if (!identity) {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { viewAsWriteBlock } from "@/lib/session/view-as";
+import { rejectIfViewingAs } from "@/lib/session/view-as";
 import { getActiveIdentity } from "@/lib/session/active-identity";
 import { assertQuoteReadable, assertQuoteWritable } from "@/lib/session/authorize-quote";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -44,7 +44,7 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const readOnly = await viewAsWriteBlock();
+  const readOnly = await rejectIfViewingAs();
   if (readOnly) return readOnly;
   const identity = await getActiveIdentity();
   if (!identity) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -93,7 +93,7 @@ export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const readOnly = await viewAsWriteBlock();
+  const readOnly = await rejectIfViewingAs();
   if (readOnly) return readOnly;
   const identity = await getActiveIdentity();
   if (!identity) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

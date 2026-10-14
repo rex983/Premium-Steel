@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getToken } from "next-auth/jwt";
+import { viewAsWriteBlock } from "@/lib/launcher-kit/view-as";
 
 const publicPaths = ["/login", "/api/auth", "/sso/callback"];
 
-const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
-
-// Non-GET endpoints that are genuinely read-only and stay usable while an
-// admin is viewing as another user.
-const VIEW_AS_READONLY_POSTS = [
+// Non-GET endpoints that stay usable while an admin is viewing as another
+// user (/api/auth so sign-out works; the rest are genuinely read-only).
+const VIEW_AS_ALLOW = [
+  "/api/auth",
   "/api/quotes/preview", // renders a PDF from the posted pricing result; no writes
 ];
 
@@ -32,25 +31,11 @@ export async function middleware(req: NextRequest) {
 
   // Admin "View as" sessions are read-only: refuse every mutation (API route
   // handlers and server actions alike — both arrive here as non-GET requests).
-  if (!SAFE_METHODS.has(req.method) && !VIEW_AS_READONLY_POSTS.includes(pathname)) {
-    const blocked = await viewAsBlock(req, secureCookie);
-    if (blocked) return blocked;
-  }
+  // Route-level rejectIfViewingAs() is the second layer.
+  const blocked = await viewAsWriteBlock(req, VIEW_AS_ALLOW);
+  if (blocked) return blocked;
 
   return NextResponse.next();
-}
-
-async function viewAsBlock(req: NextRequest, secureCookie: boolean): Promise<NextResponse | null> {
-  const secret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
-  if (!secret) return null; // route-level viewAsWriteBlock() still applies
-  try {
-    const jwt = await getToken({ req, secret, secureCookie });
-    if (!jwt?.viewAs) return null;
-    const name = (typeof jwt.name === "string" && jwt.name) || jwt.email || "another user";
-    return NextResponse.json({ error: `Read-only: viewing as ${name}` }, { status: 403 });
-  } catch {
-    return null;
-  }
 }
 
 export const config = {

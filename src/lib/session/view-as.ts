@@ -1,23 +1,24 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
+import { assertNotViewingAs, ViewAsReadOnlyError } from "@/lib/launcher-kit/view-as";
 import type { ViewAs } from "@/types/auth";
 
-
-export function readOnlyMessage(targetName: string | null | undefined): string {
-  return `Read-only: viewing as ${targetName || "another user"}`;
-}
-
 /**
- * Defense in depth behind the middleware block: returns a 403 response when the
- * current session is an admin "View as" session, otherwise null.
+ * Defense in depth behind the middleware block, for route handlers: the kit's
+ * assertNotViewingAs() as a 403 response instead of a throw. Null when the
+ * session isn't an admin "View as".
  */
-export async function viewAsWriteBlock(): Promise<NextResponse | null> {
+export async function rejectIfViewingAs(): Promise<NextResponse | null> {
   const session = (await (auth as unknown as () => Promise<unknown>)()) as
-    | { user?: { name?: string | null; email?: string | null }; viewAs?: ViewAs | null }
+    | { user?: { name?: string | null }; viewAs?: ViewAs | null }
     | null;
-  if (!session?.viewAs) return null;
-  return NextResponse.json(
-    { error: readOnlyMessage(session.user?.name || session.user?.email) },
-    { status: 403 },
-  );
+  try {
+    assertNotViewingAs(session);
+    return null;
+  } catch (e) {
+    if (e instanceof ViewAsReadOnlyError) {
+      return NextResponse.json({ error: e.message }, { status: 403 });
+    }
+    throw e;
+  }
 }

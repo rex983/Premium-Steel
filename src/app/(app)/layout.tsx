@@ -1,15 +1,24 @@
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { SessionProvider } from "@/components/providers/session-provider";
-import { ImpersonationBanner } from "@/components/layout/impersonation-banner";
+import { ViewAsBanner } from "@/lib/launcher-kit/view-as-banner";
+import { auth } from "@/auth";
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
+export default async function AppLayout({ children }: { children: React.ReactNode }) {
+  const session = await auth();
+  const viewAs = session?.viewAs;
   return (
     <SessionProvider>
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset>
-          <ImpersonationBanner />
+          {viewAs && (
+            <ViewAsBanner
+              viewedName={session.user?.name?.trim() || session.user?.email || "user"}
+              viewedRole={session.user?.role}
+              actorName={viewAs.actorName?.trim() || viewAs.actorEmail}
+            />
+          )}
           {children}
         </SidebarInset>
       </SidebarProvider>

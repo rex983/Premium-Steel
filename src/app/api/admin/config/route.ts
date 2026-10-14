@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { viewAsWriteBlock } from "@/lib/session/view-as";
+import { rejectIfViewingAs } from "@/lib/session/view-as";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAudit } from "@/lib/audit";
 import { requireAdmin } from "@/lib/admin-guard";
@@ -20,7 +20,7 @@ export async function GET() {
 }
 
 export async function PATCH(req: NextRequest) {
-  const readOnly = await viewAsWriteBlock();
+  const readOnly = await rejectIfViewingAs();
   if (readOnly) return readOnly;
   const guard = await requireAdmin();
   if (!guard.ok) return guard.res;

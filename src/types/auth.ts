@@ -12,10 +12,11 @@ export type LauncherRoleName =
   | "cancellations_dept"
   | "revisions_dept";
 export type UserRole = LauncherRoleName | (string & {});
-// Matches the launcher's shared profiles.office column.
-export type Office = "Sales" | "BST" | "RnD";
-// Matches the launcher's shared profiles.department column.
-export type Department = "SALES TEAM" | "BST" | "RnD";
+// profiles.office / profiles.department values. The launcher owns the lists
+// (launcher_offices / launcher_departments) and admins can add new ones, so
+// these are plain strings; read the current options via src/lib/launcher/org.ts.
+export type Office = string;
+export type Department = string;
 
 /** Admin "View as" (launcher-initiated, read-only impersonation). */
 export interface ViewAs {
@@ -41,7 +42,10 @@ export interface UserProfile {
 declare module "next-auth" {
   interface Session {
     user: {
+      /** Real launcher role (display only). */
       role: UserRole;
+      /** Permission role = launcher_permission_role(role); use for EVERY in-app permission check. */
+      permRole: UserRole;
       profileId: string;
       office?: Office;
       department?: Department | null;
@@ -53,6 +57,9 @@ declare module "next-auth" {
 
   interface JWT {
     role?: UserRole;
+    permRole?: UserRole;
+    breakGlass?: boolean;
+    accessOkAt?: number;
     profileId?: string;
     office?: Office;
     department?: Department | null;

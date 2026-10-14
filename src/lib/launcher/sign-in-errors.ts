@@ -2,7 +2,9 @@
 export function signInErrorMessage(code: string | null | undefined): string | null {
   switch (code) {
     case "NoAppAccess":
-      return "You don't have access to PSB Pricing in the launcher. Ask an admin to grant it in the BBD Launcher.";
+      return "You don't have access to PSB Pricing in the BBD Launcher.";
+    case "AccessCheckFailed":
+      return "Couldn't confirm your launcher access — try again.";
     case "NoProfile":
       return "Your account isn't set up (or is inactive) in the BBD Launcher.";
     case "ViewAsDenied":

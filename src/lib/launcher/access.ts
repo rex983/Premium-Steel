@@ -3,42 +3,59 @@ import { createAdminClient } from "@/lib/supabase/admin";
 /** This app's JWT audience as registered in the launcher (launcher_sso_configs.jwt_audience). */
 export const LAUNCHER_AUDIENCE = "psb-pricing";
 
-const MISSING_RPC_CODES = new Set(["PGRST202", "42883", "PGRST204"]);
-let warned = false;
-function warnOnce(msg: string, detail?: unknown) {
-  if (warned) return;
-  warned = true;
-  console.warn(`[launcher-access] ${msg}; failing open`, detail ?? "");
-}
-
 /**
- * Does the launcher grant this profile access to PSB Pricing?
- * The launcher is the source of truth (role × office grid, per-person grants,
- * legacy offices). Returns true (fail open) when the app isn't registered
- * (NULL), the RPC isn't deployed yet, or the call fails transiently.
+ * Result of launcher_can_open_app for this app:
+ *   granted - the RPC returned exactly true
+ *   denied  - false, or NULL (no active launcher app registered for the audience)
+ *   error   - RPC missing (PGRST202 / 42883 / PGRST204) or a transient failure
+ * Access is fail-CLOSED: sign-in requires "granted"; the 60s recheck ends the
+ * session on "denied" and tolerates "error" only for a short grace window.
  */
-export async function launcherCanOpenApp(profileId: string): Promise<boolean> {
+export type LauncherAccess = "granted" | "denied" | "error";
+
+const MISSING_RPC_CODES = new Set(["PGRST202", "42883", "PGRST204"]);
+
+export async function checkLauncherAccess(profileId: string): Promise<LauncherAccess> {
   try {
     const { data, error } = await createAdminClient().rpc("launcher_can_open_app", {
       p_profile_id: profileId,
       p_audience: LAUNCHER_AUDIENCE,
     });
     if (error) {
-      warnOnce(
+      console.warn(
         MISSING_RPC_CODES.has(error.code ?? "")
-          ? "launcher_can_open_app RPC not deployed"
-          : "launcher_can_open_app failed",
+          ? "[launcher-access] launcher_can_open_app RPC not deployed; denying"
+          : "[launcher-access] launcher_can_open_app failed; denying",
         error.message,
       );
-      return true;
+      return "error";
     }
     if (data === null || data === undefined) {
-      warnOnce(`no active launcher app registered with audience "${LAUNCHER_AUDIENCE}"`);
-      return true;
+      console.warn(`[launcher-access] no active launcher app registered with audience "${LAUNCHER_AUDIENCE}"; denying`);
+      return "denied";
     }
-    return data === true;
+    return data === true ? "granted" : "denied";
   } catch (err) {
-    warnOnce("launcher_can_open_app threw", err);
-    return true;
+    console.warn("[launcher-access] launcher_can_open_app threw; denying", err);
+    return "error";
+  }
+}
+
+/**
+ * Permission role for in-app checks: launcher_permission_role(role) =
+ * coalesce(launcher_roles.acts_as, name). Falls back to the real role when the
+ * function is missing or fails. acts_as can never grant admin: "admin" is only
+ * returned for role === "admin".
+ */
+export async function launcherPermissionRole(role: string | null | undefined): Promise<string> {
+  const real = role ?? "";
+  if (!real) return real;
+  try {
+    const { data, error } = await createAdminClient().rpc("launcher_permission_role", { p_role: real });
+    if (error || typeof data !== "string" || !data) return real;
+    if (data === "admin" && real !== "admin") return real;
+    return data;
+  } catch {
+    return real;
   }
 }

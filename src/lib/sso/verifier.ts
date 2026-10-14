@@ -1,5 +1,6 @@
 import { createRemoteJWKSet, jwtVerify } from "jose";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { LAUNCHER_AUDIENCE } from "@/lib/launcher/access";
 
 // Public JWKS endpoint published by the BBD Launcher (its IdP).
 // Override via LAUNCHER_JWKS_URL on Vercel if launcher moves.
@@ -9,7 +10,7 @@ const JWKS_URL =
 
 const JWKS = createRemoteJWKSet(new URL(JWKS_URL));
 
-const AUDIENCE = "psb-pricing";
+const AUDIENCE = LAUNCHER_AUDIENCE;
 
 export interface LauncherSsoClaims {
   sub: string;
@@ -17,6 +18,14 @@ export interface LauncherSsoClaims {
   name: string;
   role: string;
   profile_id: string;
+  /** Present when a launcher admin is viewing the app as this user. */
+  act: LauncherSsoActor | null;
+}
+
+export interface LauncherSsoActor {
+  sub: string;
+  profile_id: string;
+  name: string;
 }
 
 export async function verifyLauncherSsoToken(
@@ -37,6 +46,26 @@ export async function verifyLauncherSsoToken(
     throw new Error("SSO token missing jti claim");
   }
 
+  // Optional actor claim (admin "View as"). If present it must be well-formed.
+  let act: LauncherSsoActor | null = null;
+  if (payload.act !== undefined && payload.act !== null) {
+    const raw = payload.act as Record<string, unknown>;
+    if (
+      typeof raw !== "object" ||
+      typeof raw.sub !== "string" ||
+      !raw.sub ||
+      typeof raw.profile_id !== "string" ||
+      !raw.profile_id
+    ) {
+      throw new Error("SSO token has malformed act claim");
+    }
+    act = {
+      sub: raw.sub,
+      profile_id: raw.profile_id,
+      name: typeof raw.name === "string" ? raw.name : "",
+    };
+  }
+
   await consumeJti(payload.jti, payload.exp);
 
   return {
@@ -48,6 +77,7 @@ export async function verifyLauncherSsoToken(
       typeof payload.profile_id === "string"
         ? payload.profile_id
         : String(payload.sub ?? ""),
+    act,
   };
 }
 

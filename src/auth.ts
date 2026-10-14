@@ -3,8 +3,13 @@ import type { JWT } from "next-auth/jwt";
 import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { verifyLauncherSsoToken } from "@/lib/sso/verifier";
-import type { UserRole, Office, Department } from "@/types/auth";
+import { verifyLauncherSsoToken, type LauncherSsoActor } from "@/lib/sso/verifier";
+import { launcherCanOpenApp } from "@/lib/launcher/access";
+import { VIEW_AS_MAX_MS } from "@/lib/session/view-as-config";
+import type { UserRole, Office, Department, ViewAs } from "@/types/auth";
+
+/** Carried from authorize() to the signIn/jwt callbacks on the same user object. */
+type SsoUserExtras = { act?: LauncherSsoActor | null };
 
 const providers = [];
 
@@ -40,6 +45,7 @@ providers.push(
           email: claims.email,
           name: claims.name || null,
           image: null,
+          act: claims.act,
         };
       } catch (err) {
         console.error("[auth] launcher SSO token verification failed", err);
@@ -107,13 +113,26 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (account?.provider === "google") {
         if (!user.email.endsWith("@bigbuildingsdirect.com")) return false;
       }
+      // Break-glass admin (documented exception: role=admin only, no launcher row).
       if (account?.provider === "credentials" && user.id === BOOTSTRAP_ADMIN_ID) return true;
-      return isProfileAllowed(user.email);
+
+      const gate = await signInGate(user.email);
+      if (gate !== true) return gate;
+
+      const act = (user as SsoUserExtras).act;
+      if (act) {
+        if (account?.provider !== "sso-jwt") return false;
+        if ((await isActorStillAdmin(act.profile_id, act.sub)) !== true) {
+          return "/login?error=ViewAsDenied";
+        }
+      }
+      return true;
     },
     async jwt({ token, user }) {
       if (user?.email) {
         token.signedInAt = Date.now();
         token.checkedAt = Date.now();
+        token.viewAs = null;
         const adminEmail = bootstrapAdminEmail();
         if (adminEmail && user.email.toLowerCase() === adminEmail && user.id === BOOTSTRAP_ADMIN_ID) {
           token.role = "admin" as UserRole;
@@ -121,24 +140,25 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           return token;
         }
 
-        try {
-          const supabase = createAdminClient();
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("id, role, office, department")
-            .eq("email", user.email)
-            .single();
+        // signIn() already required an active launcher profiles row; load the
+        // shared identity from it. No row -> no session (no fallback role).
+        const { data: profile } = await createAdminClient()
+          .from("profiles")
+          .select(PROFILE_COLUMNS)
+          .eq("email", user.email)
+          .maybeSingle();
+        if (!profile) return null;
+        applyProfile(token, profile as ProfileRow);
 
-          if (profile) {
-            token.role = profile.role as UserRole;
-            token.profileId = profile.id;
-            if (profile.office) token.office = profile.office as Office;
-            token.department = (profile.department ?? null) as Department | null;
-          } else {
-            token.role = "viewer" as UserRole;
-          }
-        } catch {
-          token.role = "viewer" as UserRole;
+        const act = (user as SsoUserExtras).act;
+        if (act) {
+          const viewAs: ViewAs = {
+            actorProfileId: act.profile_id,
+            actorEmail: act.sub,
+            actorName: act.name || null,
+            startedAt: Date.now(),
+          };
+          token.viewAs = viewAs;
         }
         return token;
       }
@@ -148,9 +168,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (token) {
         session.user.role = token.role as UserRole;
         session.user.profileId = token.profileId as string;
-        if (token.office) session.user.office = token.office as Office;
+        session.user.office = (token.office ?? undefined) as Office | undefined;
         session.user.department = (token.department ?? null) as Department | null;
+        session.user.isIt = token.isIt === true;
+        if (typeof token.name === "string") session.user.name = token.name;
       }
+      session.viewAs = (token?.viewAs as ViewAs | null | undefined) ?? null;
       return session;
     },
   },
@@ -161,35 +184,93 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 });
 
 const REVALIDATE_INTERVAL_MS = 60 * 1000;
+const PROFILE_COLUMNS =
+  "id, email, full_name, role, office, department, is_it, is_active, signed_out_at";
 
-/** Sign-in gate: the profile must exist and be active. Fails open on DB errors. */
-async function isProfileAllowed(email: string): Promise<boolean> {
+interface ProfileRow {
+  id: string;
+  email: string;
+  full_name: string | null;
+  role: string;
+  office: string | null;
+  department: string | null;
+  is_it: boolean | null;
+  is_active: boolean | null;
+  signed_out_at: string | null;
+}
+
+/** Copy the launcher-owned identity fields onto the token. */
+function applyProfile(token: JWT, profile: ProfileRow) {
+  token.role = profile.role as UserRole;
+  token.profileId = profile.id;
+  token.office = (profile.office ?? undefined) as Office | undefined;
+  token.department = (profile.department ?? null) as Department | null;
+  token.isIt = profile.is_it === true;
+  if (profile.full_name) token.name = profile.full_name;
+}
+
+/**
+ * Sign-in gate (every provider except break-glass): the launcher profiles row
+ * must exist and be active, and the launcher must grant access to this app.
+ * A profile read error denies (no role can be established without it); the
+ * launcher access RPC itself fails open (see launcherCanOpenApp).
+ */
+async function signInGate(email: string): Promise<true | false | string> {
   try {
     const { data: profile, error } = await createAdminClient()
       .from("profiles")
-      .select("is_active")
+      .select("id, is_active")
       .eq("email", email)
       .maybeSingle();
     if (error) {
-      console.warn("[auth] sign-in profile check failed; allowing", error.message);
-      return true;
+      console.warn("[auth] sign-in profile check failed; denying", error.message);
+      return false;
     }
-    return !!profile && profile.is_active !== false;
-  } catch (err) {
-    console.warn("[auth] sign-in profile check threw; allowing", err);
+    if (!profile || profile.is_active === false) return "/login?error=NoProfile";
+    if (!(await launcherCanOpenApp(profile.id))) return "/login?error=NoAppAccess";
     return true;
+  } catch (err) {
+    console.warn("[auth] sign-in profile check threw; denying", err);
+    return false;
   }
 }
 
 /**
- * Session revocation: at most once a minute, re-read the caller's profile and
- * drop the session if the profile is gone, deactivated, or was force-signed-out
- * (launcher sets profiles.signed_out_at) after this session started. Role /
- * office / department are refreshed from the same row. DB errors fail open and
- * leave checkedAt untouched so the next request retries.
+ * The View-as actor must still be an active launcher admin (and, at sign-in,
+ * match the email in the act claim). Returns null on a transient DB error.
+ */
+async function isActorStillAdmin(actorProfileId: string, actorEmail?: string): Promise<boolean | null> {
+  try {
+    const { data, error } = await createAdminClient()
+      .from("profiles")
+      .select("email, role, is_active")
+      .eq("id", actorProfileId)
+      .maybeSingle();
+    if (error) return null;
+    if (!data || data.is_active === false || data.role !== "admin") return false;
+    if (actorEmail && (data.email ?? "").toLowerCase() !== actorEmail.toLowerCase()) return false;
+    return true;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Session revocation + live sync with the launcher: at most once a minute,
+ * re-read the caller's profile and launcher app access (in parallel) and drop
+ * the session if the profile is gone, deactivated, force-signed-out
+ * (profiles.signed_out_at after this session started), or no longer granted
+ * this app. Role / office / department / is_it / name are refreshed from the
+ * same row so launcher edits apply within ~60s without re-login. A View-as
+ * session also needs the actor to still be an active admin and ends 60 minutes
+ * after it started. DB errors fail open and leave checkedAt untouched so the
+ * next request retries.
  */
 async function revalidateToken(token: JWT): Promise<JWT | null> {
   const now = Date.now();
+  const viewAs = token.viewAs as ViewAs | null | undefined;
+  if (viewAs && now - viewAs.startedAt > VIEW_AS_MAX_MS) return null;
+
   const checkedAt = typeof token.checkedAt === "number" ? token.checkedAt : 0;
   if (now - checkedAt < REVALIDATE_INTERVAL_MS) return token;
 
@@ -209,26 +290,33 @@ async function revalidateToken(token: JWT): Promise<JWT | null> {
   if (!token.email) return null;
 
   try {
-    const supabase = createAdminClient();
-    const { data: profile, error } = await supabase
+    const profileQuery = createAdminClient()
       .from("profiles")
-      .select("id, role, office, department, is_active, signed_out_at")
+      .select(PROFILE_COLUMNS)
       .eq("email", token.email)
       .maybeSingle();
+    const [{ data: profile, error }, hasAccess, actorOk] = await Promise.all([
+      profileQuery,
+      typeof token.profileId === "string" && token.profileId
+        ? launcherCanOpenApp(token.profileId)
+        : Promise.resolve(true),
+      viewAs ? isActorStillAdmin(viewAs.actorProfileId) : Promise.resolve(true as boolean | null),
+    ]);
     if (error) {
       console.warn("[auth] profile revalidation failed; keeping session", error.message);
       return token;
     }
-    if (!profile || profile.is_active === false) return null;
-    if (profile.signed_out_at && new Date(profile.signed_out_at).getTime() > (token.signedInAt as number)) {
+    const row = profile as ProfileRow | null;
+    if (!row || row.is_active === false) return null;
+    if (row.signed_out_at && new Date(row.signed_out_at).getTime() > (token.signedInAt as number)) {
       return null;
     }
+    if (!hasAccess) return null;
+    if (actorOk === false) return null;
 
-    token.role = profile.role as UserRole;
-    token.profileId = profile.id;
-    token.office = (profile.office ?? undefined) as Office | undefined;
-    token.department = (profile.department ?? null) as Department | null;
-    token.checkedAt = now;
+    applyProfile(token, row);
+    // Actor lookup failed transiently: keep the session but retry next request.
+    if (actorOk !== null) token.checkedAt = now;
     return token;
   } catch (err) {
     console.warn("[auth] profile revalidation threw; keeping session", err);

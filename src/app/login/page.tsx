@@ -1,19 +1,8 @@
-import { Suspense } from "react";
-import { signInErrorMessage } from "@/lib/launcher/sign-in-errors";
-import { LoginForm } from "./login-form";
+import { signInErrorMessages } from "@/lib/launcher/sign-in-errors";
+import { LauncherSignInPage, type SignInSearchParams } from "@/lib/launcher-kit/sign-in-page";
 
-export default async function LoginPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ error?: string | string[] }>;
-}) {
-  const { error } = await searchParams;
-  const errorMessage = signInErrorMessage(typeof error === "string" ? error : null);
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/40">
-      <Suspense>
-        <LoginForm errorMessage={errorMessage} />
-      </Suspense>
-    </div>
-  );
+// Signed-out visits go through the launcher: straight in when signed in there,
+// otherwise one "Sign in on the launcher" button (launcher kit).
+export default async function LoginPage({ searchParams }: { searchParams: Promise<SignInSearchParams> }) {
+  return <LauncherSignInPage searchParams={await searchParams} messages={signInErrorMessages()} />;
 }

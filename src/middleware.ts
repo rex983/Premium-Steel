@@ -24,7 +24,8 @@ export async function middleware(req: NextRequest) {
 
   if (!token) {
     const callback = pathname === "/" ? "/calculator" : pathname;
-    const signInUrl = new URL("/api/auth/signin/google", req.url);
+    // /login sends them through the launcher: straight in when they're signed in there.
+    const signInUrl = new URL("/login", req.url);
     signInUrl.searchParams.set("callbackUrl", callback);
     return NextResponse.redirect(signInUrl);
   }

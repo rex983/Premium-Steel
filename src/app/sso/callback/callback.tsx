@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
+import { safeNext } from "@/lib/launcher-kit/urls";
 
 /**
  * `messages` maps sign-in error codes to text and `invalid` is the expired /
@@ -29,7 +30,7 @@ export function Callback({
     (async () => {
       const res = await signIn("sso-jwt", {
         token,
-        callbackUrl: "/calculator",
+        callbackUrl: safeNext(searchParams.get("next")) ?? "/calculator",
         redirect: false,
       });
       if (res?.ok && res.url) {

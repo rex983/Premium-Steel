@@ -30,27 +30,33 @@ export default function CalculatorPage() {
   const [addlDepositActive, setAddlDepositActive] = useState<boolean>(false);
   const { pricing, loading: pricingLoading, error: pricingError } = usePricing(regionId);
 
-  // The three adjustments below run during render (React's "adjust state
-  // while rendering" pattern) rather than in effects. They are evaluated
-  // against the same snapshot the old effects saw, so the resulting state is
-  // identical; React just re-renders before committing the stale values.
-
-  // Auto-pick first region once regions load
+  // Auto-pick the first region once regions load (React's "adjust state
+  // while rendering" pattern, rather than an effect).
   if (!regionId && regions.length > 0) setRegionId(regions[0].id);
 
-  // When state changes, ensure the region matches
-  if (stateCode) {
-    const sd = stateDefaults.find((s) => s.state_code === stateCode);
-    if (sd?.region_id && sd.region_id !== regionId) setRegionId(sd.region_id);
-  }
+  // The picker the user touched decides. Picking a region switches to it and
+  // drops a selected state that isn't in that region; picking a state brings
+  // its region along. (The region used to be pulled back to the selected
+  // state's region on every render, so choosing another region while a state
+  // was selected bounced straight back.)
+  const regionOfState = (code: string) => stateDefaults.find((s) => s.state_code === code)?.region_id ?? null;
+  const pickRegion = (id: string) => {
+    setRegionId(id);
+    if (stateCode && regionOfState(stateCode) !== id) setStateCode("");
+  };
+  const pickState = (code: string) => {
+    setStateCode(code);
+    const region = regionOfState(code);
+    if (region && region !== regionId) setRegionId(region);
+  };
 
   // Only show states belonging to the selected region.
   const visibleStateDefaults = regionId
     ? stateDefaults.filter((s) => s.region_id === regionId)
     : stateDefaults;
 
-  // If the user switches region and the current state no longer belongs to it,
-  // drop the stale stateCode so the picker doesn't show a phantom selection.
+  // Safety net (e.g. state defaults reloading): never keep a state that isn't
+  // in the selected region, so the picker can't show a phantom selection.
   if (stateCode && !visibleStateDefaults.some((s) => s.state_code === stateCode)) {
     setStateCode("");
   }
@@ -85,12 +91,12 @@ export default function CalculatorPage() {
             <RegionPicker
               regions={regions}
               selectedRegionId={regionId}
-              onChange={setRegionId}
+              onChange={pickRegion}
             />
             <StatePicker
               states={visibleStateDefaults}
               value={stateCode}
-              onChange={setStateCode}
+              onChange={pickState}
             />
             <div className="space-y-1 max-w-sm">
               <Label htmlFor="taxPct" className="text-xs">Sales Tax (%)</Label>

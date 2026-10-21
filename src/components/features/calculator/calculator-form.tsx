@@ -304,19 +304,6 @@ export function CalculatorForm({
     });
   };
 
-  const numField = (key: keyof BuildingConfig, label: string, step = 1) => (
-    <div className="space-y-1">
-      <Label htmlFor={String(key)} className="text-xs">{label}</Label>
-      <Input
-        id={String(key)}
-        type="number"
-        step={step}
-        value={String(config[key] ?? "")}
-        onChange={(e) => update(key, Number(e.target.value) as BuildingConfig[typeof key])}
-      />
-    </div>
-  );
-
   const selectField = <T extends string>(
     key: keyof BuildingConfig,
     label: string,

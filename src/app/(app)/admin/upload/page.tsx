@@ -60,9 +60,9 @@ export default function UploadPage() {
   const [history, setHistory] = useState<UploadHistoryRow[] | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (!regionId && regions.length > 0) setRegionId(regions[0].id);
-  }, [regions, regionId]);
+  // Auto-pick the first region once regions load (adjusted during render
+  // rather than in an effect).
+  if (!regionId && regions.length > 0) setRegionId(regions[0].id);
 
   useEffect(() => {
     fetch("/api/admin/pricing-status")
@@ -137,7 +137,7 @@ export default function UploadPage() {
           <CardHeader>
             <p className="text-sm text-muted-foreground">
               Upload a PSB workbook (.xlsx) for a specific region. The parser auto-detects
-              south vs north and validates the file's states overlap with the target region.
+              south vs north and validates the file&apos;s states overlap with the target region.
               On success, the new version is automatically activated.
             </p>
           </CardHeader>

@@ -209,7 +209,6 @@ async function main() {
       const noPromo = engineMod.priceBuilding({ ...smokeSample, promoTier: "No Promotional Sale" }, parsed.matrices);
       const withPromo = engineMod.priceBuilding(withManual, parsed.matrices);
       const gap = noPromo.totals.totalTaxableSale - withPromo.totals.totalTaxableSale;
-      const expectedGap = noPromo.totals.totalTaxableSale * 0.10; // 10% off pre-promo line sum
       // We can't check exact expectedGap without recomputing lineSum, but assert non-zero + positive
       if (gap > 0) {
         console.log(`  PASS: Manual Discount 10% reduced taxable by ${fmt(gap)}`);

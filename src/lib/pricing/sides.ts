@@ -1,6 +1,6 @@
 import type { SidesMatrix } from "@/types/pricing";
 import type { BuildingConfig } from "./types";
-import { QTY_MULTIPLIER, ROOF_STYLE_CODE } from "./constants";
+import { QTY_MULTIPLIER } from "./constants";
 import { gridCell, num, colToLetter, letterToCol, round2, type RawGrid } from "./_helpers";
 
 /**

@@ -19,14 +19,15 @@ export function Callback({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [error, setError] = useState<string | null>(null);
+  const [signInError, setSignInError] = useState<string | null>(null);
+  // A missing token is known during render, so derive that error instead of
+  // setting it from the effect.
+  const hasToken = !!searchParams.get("sso_token");
+  const error = hasToken ? signInError : invalid;
 
   useEffect(() => {
     const token = searchParams.get("sso_token");
-    if (!token) {
-      setError(invalid);
-      return;
-    }
+    if (!token) return;
     (async () => {
       const res = await signIn("sso-jwt", {
         token,
@@ -36,9 +37,9 @@ export function Callback({
       if (res?.ok && res.url) {
         router.replace(res.url);
       } else if (res?.error && res.error !== "CredentialsSignin") {
-        setError(messages[res.error] ?? messages.default);
+        setSignInError(messages[res.error] ?? messages.default);
       } else {
-        setError(invalid);
+        setSignInError(invalid);
       }
     })();
   }, [router, searchParams, messages, invalid]);

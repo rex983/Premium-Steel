@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AppHeader } from "@/components/layout/app-header";
 import {
   Card, CardContent, CardHeader,
@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
@@ -58,14 +58,25 @@ export default function RegionsPage() {
   const [creating, setCreating] = useState(false);
   const officeOptions = useLauncherOffices();
 
-  const load = async () => {
-    setLoading(true);
-    const res = await fetch("/api/admin/regions").then((r) => r.json());
-    setRegions(res.regions ?? []);
-    setLoading(false);
-  };
+  // Fetch-only: sets state after the response arrives. `loading` starts true
+  // on mount; event handlers use `reload()` to raise it first.
+  const load = useCallback(
+    () =>
+      fetch("/api/admin/regions")
+        .then((r) => r.json())
+        .then((res) => {
+          setRegions(res.regions ?? []);
+          setLoading(false);
+        }),
+    []
+  );
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [load]);
+
+  const reload = () => {
+    setLoading(true);
+    load();
+  };
 
   const toggleActive = async (region: Region) => {
     await fetch(`/api/admin/regions/${region.id}`, {
@@ -73,13 +84,13 @@ export default function RegionsPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ is_active: !region.is_active }),
     });
-    load();
+    reload();
   };
 
   const handleDelete = async (region: Region) => {
     if (!confirm(`Delete region "${region.name}"? This will also delete all pricing data and uploads for this region.`)) return;
     await fetch(`/api/admin/regions/${region.id}`, { method: "DELETE" });
-    load();
+    reload();
   };
 
   return (
@@ -162,14 +173,14 @@ export default function RegionsPage() {
       <RegionDialog
         open={creating}
         setOpen={setCreating}
-        onSaved={() => { setCreating(false); load(); }}
+        onSaved={() => { setCreating(false); reload(); }}
       />
       {editing && (
         <RegionDialog
           open={!!editing}
           setOpen={(v) => !v && setEditing(null)}
           region={editing}
-          onSaved={() => { setEditing(null); load(); }}
+          onSaved={() => { setEditing(null); reload(); }}
         />
       )}
     </>
@@ -200,13 +211,17 @@ function RegionDialog({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  // Reset the form whenever `region` or `open` changes (store the previous
+  // props in state and adjust during render instead of in an effect).
+  const [prevProps, setPrevProps] = useState({ region, open });
+  if (prevProps.region !== region || prevProps.open !== open) {
+    setPrevProps({ region, open });
     setName(region?.name ?? "");
     setDisplayName(region?.display_name ?? "");
     setStatesText((region?.states ?? []).join(", "));
     setOffices(region?.offices ?? []);
     setError(null);
-  }, [region, open]);
+  }
 
   const toggleOffice = (value: string) => {
     setOffices((prev) =>

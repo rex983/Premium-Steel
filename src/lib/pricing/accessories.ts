@@ -1,6 +1,6 @@
 import type { AccessoriesMatrix } from "@/types/pricing";
 import type { BuildingConfig } from "./types";
-import { gridCell, num, round2, type RawGrid } from "./_helpers";
+import { round2 } from "./_helpers";
 
 /**
  * Accessory line items.

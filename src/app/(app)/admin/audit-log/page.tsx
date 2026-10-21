@@ -28,15 +28,22 @@ export default function AuditLogPage() {
   const [entity, setEntity] = useState("all");
   const [loading, setLoading] = useState(true);
 
-  const load = async () => {
-    setLoading(true);
-    const url = entity === "all" ? "/api/admin/audit-log" : `/api/admin/audit-log?entity=${entity}`;
-    const res = await fetch(url).then((r) => r.json());
-    setEntries(res.entries ?? []);
-    setLoading(false);
-  };
+  // `loading` starts true on mount and is flipped back to true by the filter
+  // change handler, so the effect only sets state after the fetch resolves.
+  useEffect(() => {
+    const load = async () => {
+      const url = entity === "all" ? "/api/admin/audit-log" : `/api/admin/audit-log?entity=${entity}`;
+      const res = await fetch(url).then((r) => r.json());
+      setEntries(res.entries ?? []);
+      setLoading(false);
+    };
+    load();
+  }, [entity]);
 
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [entity]);
+  const handleEntityChange = (next: string) => {
+    if (next !== entity) setLoading(true);
+    setEntity(next);
+  };
 
   return (
     <>
@@ -47,7 +54,7 @@ export default function AuditLogPage() {
             <p className="text-sm text-muted-foreground">
               History of admin actions. Latest 200 entries.
             </p>
-            <Select value={entity} onValueChange={setEntity}>
+            <Select value={entity} onValueChange={handleEntityChange}>
               <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
               <SelectContent>
                 {ENTITY_FILTERS.map((e) => (

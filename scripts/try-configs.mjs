@@ -70,7 +70,6 @@ for (const [region, path] of Object.entries(WORKBOOKS)) {
 }
 
 const fmt = (n) => (n == null ? "—" : `$${Number(n).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
-const pad = (s, n) => String(s).padEnd(n);
 
 for (const c of CASES) {
   const m = cache[c.region];

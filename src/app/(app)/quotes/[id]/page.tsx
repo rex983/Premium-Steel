@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, use as usePromise } from "react";
+import { useCallback, useEffect, useState, use as usePromise } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AppHeader } from "@/components/layout/app-header";
@@ -58,15 +58,28 @@ export default function QuoteDetailPage({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const load = async () => {
+  // Raise `loading` when the route id changes (adjusted during render; it
+  // already starts true on mount).
+  const [prevId, setPrevId] = useState(id);
+  if (prevId !== id) {
+    setPrevId(id);
     setLoading(true);
-    const res = await fetch(`/api/quotes/${id}`).then((r) => r.json());
-    if (res.error) setError(res.error);
-    else setQuote(res.quote);
-    setLoading(false);
-  };
+  }
 
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [id]);
+  // Fetch-only: sets state after the response arrives.
+  const load = useCallback(
+    () =>
+      fetch(`/api/quotes/${id}`)
+        .then((r) => r.json())
+        .then((res) => {
+          if (res.error) setError(res.error);
+          else setQuote(res.quote);
+          setLoading(false);
+        }),
+    [id]
+  );
+
+  useEffect(() => { load(); }, [load]);
 
   const updateStatus = async (status: string) => {
     const res = await fetch(`/api/quotes/${id}`, {
@@ -74,7 +87,10 @@ export default function QuoteDetailPage({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status }),
     });
-    if (res.ok) load();
+    if (res.ok) {
+      setLoading(true);
+      load();
+    }
     else alert("Failed to update status");
   };
 

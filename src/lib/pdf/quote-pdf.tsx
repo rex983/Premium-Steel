@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import {
-  Document, Page, View, Text, Image, StyleSheet,
+  Document, Page, View, Text, Image as PdfImage, StyleSheet,
 } from "@react-pdf/renderer";
 import type { EngineOutput } from "@/lib/pricing/types";
 
@@ -117,7 +117,7 @@ export function QuotePdf({ quoteNumber, status, customer, result, validUntil, no
         <View style={styles.header}>
           <View>
             {logoDataUrl ? (
-              <Image src={logoDataUrl} style={styles.brandLogo} />
+              <PdfImage src={logoDataUrl} style={styles.brandLogo} />
             ) : (
               <Text style={styles.brand}>Premium Steel Buildings</Text>
             )}
@@ -148,7 +148,7 @@ export function QuotePdf({ quoteNumber, status, customer, result, validUntil, no
           <Text style={styles.sectionTitle}>Building</Text>
           <View style={styles.row}>
             <Text>Size</Text>
-            <Text>{cfg.width}' × {cfg.length}' × {cfg.height}'</Text>
+            <Text>{cfg.width}&apos; × {cfg.length}&apos; × {cfg.height}&apos;</Text>
           </View>
           <View style={styles.row}>
             <Text>Roof Style / Gauge</Text>
@@ -217,7 +217,7 @@ export function QuotePdf({ quoteNumber, status, customer, result, validUntil, no
         )}
 
         <Text style={styles.disclaimer}>
-          *CUSTOMER IS RESPONSIBLE FOR PERMITS. The lot must be level within 3" and free
+          *CUSTOMER IS RESPONSIBLE FOR PERMITS. The lot must be level within 3&quot; and free
           of obstacles. Premium Steel Buildings is not responsible for leaks under base
           rails. If there is a price discrepancy over $25, Premium Steel Buildings Inc.
           reserves the right to cancel the order.

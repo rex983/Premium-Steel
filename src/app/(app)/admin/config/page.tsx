@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AppHeader } from "@/components/layout/app-header";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -27,22 +27,28 @@ export default function ConfigPage() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
-  const load = async () => {
-    setLoading(true);
-    const res = await fetch("/api/admin/config").then((r) => r.json());
-    if (res.config) {
-      setCfg(res.config);
-      setForm({
-        deposit: String(res.config.deposit_default_pct),
-        tax: String(res.config.tax_default_pct),
-        phone: res.config.contact_phone ?? "",
-        email: res.config.contact_email ?? "",
-        address: res.config.contact_address ?? "",
-      });
-    }
-    setLoading(false);
-  };
-  useEffect(() => { load(); }, []);
+  // Only sets state after the fetch resolves; callers that need the loading
+  // flag raised (the save handler) do so themselves. Initial state is loading.
+  const load = useCallback(
+    () =>
+      fetch("/api/admin/config")
+        .then((r) => r.json())
+        .then((res) => {
+          if (res.config) {
+            setCfg(res.config);
+            setForm({
+              deposit: String(res.config.deposit_default_pct),
+              tax: String(res.config.tax_default_pct),
+              phone: res.config.contact_phone ?? "",
+              email: res.config.contact_email ?? "",
+              address: res.config.contact_address ?? "",
+            });
+          }
+          setLoading(false);
+        }),
+    []
+  );
+  useEffect(() => { load(); }, [load]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,6 +68,7 @@ export default function ConfigPage() {
     setSaving(false);
     if (res.ok) {
       setMsg("Saved.");
+      setLoading(true);
       load();
     } else {
       const j = await res.json().catch(() => ({}));

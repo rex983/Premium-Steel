@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AppHeader } from "@/components/layout/app-header";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,13 +31,24 @@ export default function StateDefaultsPage() {
   const [error, setError] = useState<string | null>(null);
   const { regions } = useRegions();
 
-  const load = async () => {
+  // Fetch-only: sets state after the response arrives. `loading` starts true
+  // on mount; event handlers use `reload()` to raise it first.
+  const load = useCallback(
+    () =>
+      fetch("/api/state-defaults")
+        .then((r) => r.json())
+        .then((res) => {
+          setRows(res.stateDefaults ?? []);
+          setLoading(false);
+        }),
+    []
+  );
+  useEffect(() => { load(); }, [load]);
+
+  const reload = () => {
     setLoading(true);
-    const res = await fetch("/api/state-defaults").then((r) => r.json());
-    setRows(res.stateDefaults ?? []);
-    setLoading(false);
+    load();
   };
-  useEffect(() => { load(); }, []);
 
   const existing = useMemo(() => new Set(rows.map((r) => r.state_code)), [rows]);
   const available = useMemo(() => ALL_STATES.filter((c) => !existing.has(c)), [existing]);
@@ -50,7 +61,7 @@ export default function StateDefaultsPage() {
       body: JSON.stringify(patch),
     });
     setSavingCode(null);
-    load();
+    reload();
   };
 
   const handleAdd = async () => {
@@ -73,7 +84,7 @@ export default function StateDefaultsPage() {
     }
     setAddState("");
     setAddRegion("");
-    load();
+    reload();
   };
 
   const handleDelete = async (code: string) => {
@@ -81,7 +92,7 @@ export default function StateDefaultsPage() {
     setSavingCode(code);
     await fetch(`/api/admin/state-defaults/${code}`, { method: "DELETE" });
     setSavingCode(null);
-    load();
+    reload();
   };
 
   return (

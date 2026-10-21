@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { AppHeader } from "@/components/layout/app-header";
 import { useRegions } from "@/hooks/use-regions";
 import { useStateDefaults } from "@/hooks/use-state-defaults";
@@ -30,17 +30,19 @@ export default function CalculatorPage() {
   const [addlDepositActive, setAddlDepositActive] = useState<boolean>(false);
   const { pricing, loading: pricingLoading, error: pricingError } = usePricing(regionId);
 
+  // The three adjustments below run during render (React's "adjust state
+  // while rendering" pattern) rather than in effects. They are evaluated
+  // against the same snapshot the old effects saw, so the resulting state is
+  // identical; React just re-renders before committing the stale values.
+
   // Auto-pick first region once regions load
-  useEffect(() => {
-    if (!regionId && regions.length > 0) setRegionId(regions[0].id);
-  }, [regionId, regions]);
+  if (!regionId && regions.length > 0) setRegionId(regions[0].id);
 
   // When state changes, ensure the region matches
-  useEffect(() => {
-    if (!stateCode) return;
+  if (stateCode) {
     const sd = stateDefaults.find((s) => s.state_code === stateCode);
     if (sd?.region_id && sd.region_id !== regionId) setRegionId(sd.region_id);
-  }, [stateCode, stateDefaults, regionId]);
+  }
 
   // Only show states belonging to the selected region.
   const visibleStateDefaults = regionId
@@ -49,12 +51,9 @@ export default function CalculatorPage() {
 
   // If the user switches region and the current state no longer belongs to it,
   // drop the stale stateCode so the picker doesn't show a phantom selection.
-  useEffect(() => {
-    if (!stateCode) return;
-    if (!visibleStateDefaults.some((s) => s.state_code === stateCode)) {
-      setStateCode("");
-    }
-  }, [regionId, visibleStateDefaults, stateCode]);
+  if (stateCode && !visibleStateDefaults.some((s) => s.state_code === stateCode)) {
+    setStateCode("");
+  }
 
   const stateDefault = stateDefaults.find((s) => s.state_code === stateCode);
 
@@ -65,12 +64,15 @@ export default function CalculatorPage() {
   // If the loaded pricing snapshot doesn't have the currently-picked tier
   // (e.g. after switching regions to a workbook with a different promo list),
   // fall back to "No Promotional Sale".
-  useEffect(() => {
-    if (promoTiers.length === 0) return;
-    if (!promoTiers.some((t) => t.label === promoTier)) {
-      setPromoTier("No Promotional Sale");
-    }
-  }, [promoTiers, promoTier]);
+  // (Guarded against re-setting the same value: a render-phase update does not
+  // bail out on identical values the way the old effect's update did.)
+  if (
+    promoTiers.length > 0 &&
+    promoTier !== "No Promotional Sale" &&
+    !promoTiers.some((t) => t.label === promoTier)
+  ) {
+    setPromoTier("No Promotional Sale");
+  }
 
   const additionalDepositPct = addlDepositActive ? ADDITIONAL_DEPOSIT_PCT : 0;
 

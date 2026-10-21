@@ -29,28 +29,44 @@ interface QuoteRow {
 
 const STATUSES = ["all", "draft", "sent", "accepted", "rejected", "cancelled", "expired"] as const;
 
+const INITIAL_SEARCH = "";
+const INITIAL_STATUS = "all";
+
+function fetchQuotes(search: string, status: string): Promise<QuoteRow[]> {
+  const params = new URLSearchParams();
+  if (search) params.set("search", search);
+  if (status !== "all") params.set("status", status);
+  const url = `/api/quotes?${params}`;
+  return fetch(url)
+    .then((r) => r.json())
+    .then((res) => res.quotes ?? []);
+}
+
 export default function QuotesPage() {
   const [quotes, setQuotes] = useState<QuoteRow[]>([]);
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("all");
+  const [search, setSearch] = useState(INITIAL_SEARCH);
+  const [status, setStatus] = useState<string>(INITIAL_STATUS);
   const [loading, setLoading] = useState(true);
 
-  const load = async () => {
-    setLoading(true);
-    const params = new URLSearchParams();
-    if (search) params.set("search", search);
-    if (status !== "all") params.set("status", status);
-    const url = `/api/quotes?${params}`;
-    const res = await fetch(url).then((r) => r.json());
-    setQuotes(res.quotes ?? []);
-    setLoading(false);
-  };
-
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
+  // Immediate load on mount (`loading` already starts true; search/status
+  // always hold their initial values at mount).
   useEffect(() => {
-    const t = setTimeout(load, 300);
+    fetchQuotes(INITIAL_SEARCH, INITIAL_STATUS).then((q) => {
+      setQuotes(q);
+      setLoading(false);
+    });
+  }, []);
+  // Debounced reload whenever the filters change (also fires once 300ms after
+  // mount, as before).
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setLoading(true);
+      fetchQuotes(search, status).then((q) => {
+        setQuotes(q);
+        setLoading(false);
+      });
+    }, 300);
     return () => clearTimeout(t);
-    /* eslint-disable-next-line */
   }, [search, status]);
 
   return (

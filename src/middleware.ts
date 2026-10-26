@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { viewAsWriteBlock } from "@/lib/launcher-kit/view-as";
 
-const publicPaths = ["/login", "/api/auth", "/sso/callback"];
+const publicPaths = ["/login", "/api/auth", "/sso/callback", "/manifest.webmanifest"];
 
 // Non-GET endpoints that stay usable while an admin is viewing as another
 // user (/api/auth so sign-out works; the rest are genuinely read-only).

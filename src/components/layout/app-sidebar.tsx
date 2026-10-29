@@ -35,6 +35,9 @@ const navItems = [
   { title: "Customers", href: "/customers", icon: Users },
 ];
 
+// Admins and managers (decided on the server; see the (app) layout).
+const auditItem = { title: "Edit history", href: "/audit", icon: History };
+
 const adminItems = [
   { title: "Upload Pricing", href: "/admin/upload", icon: Upload },
   { title: "Regions", href: "/admin/regions", icon: Map },
@@ -44,10 +47,11 @@ const adminItems = [
   { title: "Audit Log", href: "/admin/audit-log", icon: History },
 ];
 
-export function AppSidebar() {
+export function AppSidebar({ showAuditLog }: { showAuditLog: boolean }) {
   const pathname = usePathname();
   const { data: session } = useSession();
   const showAdmin = session?.user?.permRole === "admin";
+  const mainItems = showAuditLog ? [...navItems, auditItem] : navItems;
 
   return (
     <Sidebar>
@@ -61,7 +65,7 @@ export function AppSidebar() {
           <SidebarGroupLabel>Main</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navItems.map((item) => (
+              {mainItems.map((item) => (
                 <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton
                     asChild

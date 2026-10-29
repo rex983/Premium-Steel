@@ -3,6 +3,7 @@ import { AppSidebar } from "@/components/layout/app-sidebar";
 import { SessionProvider } from "@/components/providers/session-provider";
 import { ViewAsBanner } from "@/lib/launcher-kit/view-as-banner";
 import { UsageBeacon } from "@/lib/launcher-kit/usage-beacon";
+import { canSeeAuditLog } from "@/lib/launcher-kit/audit-log";
 import { auth } from "@/auth";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -12,7 +13,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <SessionProvider>
       <UsageBeacon />
       <SidebarProvider>
-        <AppSidebar />
+        <AppSidebar showAuditLog={canSeeAuditLog(session?.user?.permRole)} />
         <SidebarInset>
           {viewAs && (
             <ViewAsBanner

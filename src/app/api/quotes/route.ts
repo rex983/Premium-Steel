@@ -135,8 +135,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Failed to generate quote number" }, { status: 500 });
   }
 
-  const validUntil = new Date();
-  validUntil.setDate(validUntil.getDate() + 30);
+  // 30 days from today in Eastern time, as a date ("YYYY-MM-DD"). On the
+  // server (UTC) toISOString() after 7–8 PM Eastern was already tomorrow.
+  const validUntil = new Date(`${new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" })}T12:00:00Z`);
+  validUntil.setUTCDate(validUntil.getUTCDate() + 30);
 
   // Resolve customer
   let resolvedCustomerId: string | null = customerId || null;

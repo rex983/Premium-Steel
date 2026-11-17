@@ -29,17 +29,29 @@ export function usePricing(regionId: string | null, versionId?: string) {
 
   useEffect(() => {
     if (!regionId) return;
+    // A slow response for a region the user has since switched away from is
+    // dropped, so the form can't end up showing one region's prices while
+    // another region is selected.
+    let stale = false;
     const url = versionId
       ? `/api/pricing/${regionId}?versionId=${versionId}`
       : `/api/pricing/${regionId}`;
     fetch(url)
       .then((r) => r.json())
       .then((data) => {
+        if (stale) return;
         if (data.error) setError(data.error);
         else setPricing(data.pricing);
       })
-      .catch((e) => setError(String(e)))
-      .finally(() => setLoading(false));
+      .catch((e) => {
+        if (!stale) setError(String(e));
+      })
+      .finally(() => {
+        if (!stale) setLoading(false);
+      });
+    return () => {
+      stale = true;
+    };
   }, [regionId, versionId]);
 
   return { pricing, loading, error };

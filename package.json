@@ -14,9 +14,7 @@
     "test:all": "npm test && npm run smoke && npm run smoke:calc && npm run parity"
   },
   "dependencies": {
-    "@hookform/resolvers": "^5.2.2",
     "@react-pdf/renderer": "^4.3.2",
-    "@supabase/ssr": "^0.9.0",
     "@supabase/supabase-js": "^2.98.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -29,11 +27,8 @@
     "radix-ui": "^1.4.3",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "react-dropzone": "^15.0.0",
-    "react-hook-form": "^7.71.2",
     "tailwind-merge": "^3.5.0",
-    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
-    "zod": "^4.3.6"
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -42,7 +37,6 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.4.2",
-    "pg": "^8.20.0",
     "shadcn": "^3.8.5",
     "tailwindcss": "^4",
     "tsx": "^4.21.0",

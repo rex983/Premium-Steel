@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AppHeader } from "@/components/layout/app-header";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -56,9 +56,15 @@ export default function QuotesPage() {
       setLoading(false);
     });
   }, []);
-  // Debounced reload whenever the filters change (also fires once 300ms after
-  // mount, as before).
+  // Debounced reload whenever the filters change. Skips its first run: the
+  // effect above already loaded the list, and reloading 300ms later fetched
+  // it twice and flashed "Loading…" over the rows.
+  const firstRun = useRef(true);
   useEffect(() => {
+    if (firstRun.current) {
+      firstRun.current = false;
+      return;
+    }
     const t = setTimeout(() => {
       setLoading(true);
       fetchQuotes(search, status).then((q) => {

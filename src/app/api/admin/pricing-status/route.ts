@@ -22,16 +22,17 @@ export async function GET() {
   const [{ data: regions }, { data: pricing }] = await Promise.all([
     supabase.from("psb_regions").select("id, name").eq("is_active", true).order("name"),
     supabase.from("psb_pricing_data")
-      .select("region_id, version, matrices, created_at")
+      // Only the parser version is needed; selecting the whole matrices
+      // column pulled ~200 KB per region.
+      .select("region_id, version, parserVersion:matrices->>parserVersion, created_at")
       .eq("is_current", true),
   ]);
 
   const byRegion: Record<string, { version: number; parserVersion: string | null; uploadedAt: string }> = {};
   for (const p of pricing ?? []) {
-    const m = p.matrices as { parserVersion?: string } | null;
     byRegion[p.region_id] = {
       version: p.version,
-      parserVersion: m?.parserVersion ?? null,
+      parserVersion: (p.parserVersion as string | null) ?? null,
       uploadedAt: p.created_at,
     };
   }

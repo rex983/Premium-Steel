@@ -14,8 +14,9 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Download, Trash2, ArrowLeft } from "lucide-react";
-import { formatCurrency, formatDate, STATUS_COLORS } from "@/lib/utils";
+import { formatDate, STATUS_COLORS } from "@/lib/utils";
 import type { EngineOutput } from "@/lib/pricing/types";
+import { CopyLabel, CopyPrice } from "@/components/copy-button";
 
 interface Quote {
   id: string;
@@ -168,15 +169,15 @@ export default function QuoteDetailPage({
               <CardHeader><h3 className="font-semibold">Line Items</h3></CardHeader>
               <CardContent className="text-sm space-y-1">
                 {result.lineItems.map((li) => (
-                  <div key={li.key} className="flex justify-between">
-                    <span className="text-muted-foreground">{li.label}</span>
-                    <span className="font-mono">{formatCurrency(li.price)}</span>
+                  <div key={li.key} className="flex justify-between gap-2">
+                    <span className="text-muted-foreground"><CopyLabel text={li.label} /></span>
+                    <span className="font-mono"><CopyPrice amount={li.price} what={li.label} /></span>
                   </div>
                 ))}
                 <Separator className="my-2" />
                 <div className="flex justify-between font-medium">
-                  <span>Engineering</span>
-                  <span className="font-mono">{formatCurrency(result.engineeringBreakdown.totalEngineering)}</span>
+                  <span><CopyLabel text="Engineering" /></span>
+                  <span className="font-mono"><CopyPrice amount={result.engineeringBreakdown.totalEngineering} what="Engineering" /></span>
                 </div>
               </CardContent>
             </Card>
@@ -226,8 +227,8 @@ export default function QuoteDetailPage({
 function Money({ label, value, bold, muted }: { label: string; value: number; bold?: boolean; muted?: boolean }) {
   return (
     <div className={`flex justify-between ${bold ? "font-semibold" : ""} ${muted ? "text-muted-foreground" : ""}`}>
-      <span>{label}</span>
-      <span className="font-mono">{formatCurrency(value)}</span>
+      <span><CopyLabel text={label} /></span>
+      <span className="font-mono"><CopyPrice amount={value} what={label} /></span>
     </div>
   );
 }
@@ -235,10 +236,10 @@ function Money({ label, value, bold, muted }: { label: string; value: number; bo
 function Row({ label, spacing, extra, price }: { label: string; spacing: string; extra: number; price: number }) {
   return (
     <div className="grid grid-cols-4 gap-2 py-1 border-b last:border-b-0">
-      <div className="font-medium">{label}</div>
+      <div className="font-medium"><CopyLabel text={label} /></div>
       <div className="text-muted-foreground">{spacing}</div>
       <div className="text-muted-foreground">+{extra}</div>
-      <div className="text-right font-mono">{formatCurrency(price)}</div>
+      <div className="text-right font-mono"><CopyPrice amount={price} what={label} /></div>
     </div>
   );
 }

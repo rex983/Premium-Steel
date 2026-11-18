@@ -3,7 +3,7 @@
 import type { EngineOutput } from "@/lib/pricing/types";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { formatCurrency } from "@/lib/utils";
+import { CopyLabel, CopyPrice } from "@/components/copy-button";
 
 export function TotalsPanel({ result }: { result: EngineOutput }) {
   const t = result.totals;
@@ -17,19 +17,19 @@ export function TotalsPanel({ result }: { result: EngineOutput }) {
       <CardContent className="space-y-2 text-sm">
         <div className="space-y-1">
           {result.lineItems.map((li) => (
-            <div key={li.key} className="flex justify-between">
-              <span className="text-muted-foreground truncate pr-2">{li.label}</span>
-              <span className="font-mono">{formatCurrency(li.price)}</span>
+            <div key={li.key} className="flex justify-between gap-2">
+              <span className="flex min-w-0 text-muted-foreground"><CopyLabel text={li.label} truncate /></span>
+              <span className="font-mono"><CopyPrice amount={li.price} what={li.label} /></span>
             </div>
           ))}
           <div className="flex justify-between border-t pt-1 mt-1">
-            <span className="text-muted-foreground">Engineering</span>
-            <span className="font-mono">{formatCurrency(result.engineeringBreakdown.totalEngineering)}</span>
+            <span className="text-muted-foreground"><CopyLabel text="Engineering" /></span>
+            <span className="font-mono"><CopyPrice amount={result.engineeringBreakdown.totalEngineering} what="Engineering" /></span>
           </div>
           {t.promoDiscount !== 0 && (
             <div className="flex justify-between text-green-600">
-              <span>Promo</span>
-              <span className="font-mono">{formatCurrency(t.promoDiscount)}</span>
+              <span><CopyLabel text="Promo" /></span>
+              <span className="font-mono"><CopyPrice amount={t.promoDiscount} what="Promo" /></span>
             </div>
           )}
         </div>
@@ -64,8 +64,8 @@ export function TotalsPanel({ result }: { result: EngineOutput }) {
 function Row({ label, value, bold, muted }: { label: string; value: number; bold?: boolean; muted?: boolean }) {
   return (
     <div className={`flex justify-between ${bold ? "font-semibold" : ""} ${muted ? "text-muted-foreground" : ""}`}>
-      <span>{label}</span>
-      <span className="font-mono">{formatCurrency(value)}</span>
+      <span><CopyLabel text={label} /></span>
+      <span className="font-mono"><CopyPrice amount={value} what={label} /></span>
     </div>
   );
 }

@@ -5,6 +5,7 @@ import type { SnowEngineeringBreakdown } from "@/lib/pricing/types";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
+import { CopyLabel, CopyPrice } from "@/components/copy-button";
 
 export function EngineeringBreakdownPanel({ breakdown }: { breakdown: SnowEngineeringBreakdown }) {
   const [open, setOpen] = useState(true);
@@ -61,10 +62,10 @@ function Section({
 }: { title: string; spacing: string; original: number; extra: number; price: number }) {
   return (
     <div className="grid grid-cols-4 gap-2 py-1 border-b last:border-b-0">
-      <div className="font-medium">{title}</div>
+      <div className="font-medium"><CopyLabel text={title} /></div>
       <div className="text-muted-foreground">{spacing}</div>
       <div className="text-muted-foreground">+{extra} (orig {original})</div>
-      <div className="text-right font-mono">{formatCurrency(price)}</div>
+      <div className="text-right font-mono"><CopyPrice amount={price} what={title} /></div>
     </div>
   );
 }
